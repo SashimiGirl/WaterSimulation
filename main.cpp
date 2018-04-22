@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include "Particles.h"
 
 #if OUTPUT_ANIMATION
@@ -25,7 +26,7 @@ const int render_step = 3;
 int mx, my;
 
 Particles particles;
-
+/*
 void display(void);
 
 void reshape(int width, int height);
@@ -62,10 +63,10 @@ void keyboard(unsigned char c, int x, int y)
         break;
     }
 }
-
+*/
 int main(int argc, char** argv)
 {
-    glutInit(&argc, argv);
+    /**glutInit(&argc, argv);
 
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(width, height);
@@ -79,9 +80,45 @@ int main(int argc, char** argv)
     glutMainLoop();
     glutKeyboardFunc(keyboard);
 
-    return EXIT_SUCCESS;
-}
+    return EXIT_SUCCESS;**/
+    GLFWwindow* window;
 
+    /* Initialize the library */
+    if (!glfwInit())
+        exit(EXIT_FAILURE);
+
+    /* Create a windowed mode window and its OpenGL context */
+    window = glfwCreateWindow(width, height, "Fluidy Fun", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
+
+    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+    glfwSwapInterval(1);
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        /* Render here */
+        glfwGetFramebufferSize(window, &width, &height);
+        glViewport(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
+
+        /* Poll for and process events */
+        glfwPollEvents();
+    }
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    exit(EXIT_SUCCESS);
+}
+/*
 void reshape(int w, int h)
 {
     width = w;
@@ -131,4 +168,4 @@ void motion(int x, int y)
         theta += 2*M_PI;
     phi = clip(phi, M_PI/12, M_PI*11/12);
     glutPostRedisplay();
-}
+}*/

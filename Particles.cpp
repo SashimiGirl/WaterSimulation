@@ -57,10 +57,10 @@ void Particles::render() const
 
     for(const Particle &par : particles)
     {
-        
+
         glPushMatrix();
         glTranslatef(par.p.x, par.p.y, par.p.z);
-        glutSolidSphere(0.05, 10, 10);
+        gluSphere(0.05, 10, 10);
         glPopMatrix();
     }
 

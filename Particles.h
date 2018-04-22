@@ -11,31 +11,30 @@
  * Created on April 15, 2016, 12:16 PM
  */
 
-#ifndef PARTICLES_H
-#define PARTICLES_H
+ #ifndef PARTICLES_H
+ #define PARTICLES_H
+ #include <glad/glad.h>
+ #include <GLFW/glfw3.h>
+ #include "glm/glm.hpp"
+ #include <vector>
+ #if defined(__APPLE_CC__)
+ #else
+ #include <math.h>
+ #endif
 
-#include "glm/glm.hpp"
-#include <vector>
-#if defined(__APPLE_CC__)
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#include <math.h>
-#endif
+ class Particles {
+ public:
+     Particles();
+     void render() const;
+     void step(){} // simulate one frame
+ private:
+     struct Particle
+     {
+         glm::dvec3 p;
+         glm::dvec3 v;
+     };
 
-class Particles {
-public:
-    Particles();
-    void render() const;
-    void step(){} // simulate one frame
-private:
-    struct Particle
-    {
-        glm::dvec3 p;
-        glm::dvec3 v;
-    };
+     std::vector<Particle> particles;
+ };
 
-    std::vector<Particle> particles;
-};
-
-#endif /* PARTICLES_H */
+ #endif /* PARTICLES_H */
