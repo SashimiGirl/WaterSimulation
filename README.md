@@ -5,7 +5,7 @@ $ mkdir build
 
 $ cd build
 
-$ cmake ../src
+$ cmake ..
 ```
 
 To build, navigate to build director and run:
