@@ -60,7 +60,7 @@ void Particles::render() const
 
         glPushMatrix();
         glTranslatef(par.p.x, par.p.y, par.p.z);
-        gluSphere(0.05, 10, 10);
+        //gluSphere(0.05, 10, 10);
         glPopMatrix();
     }
 
