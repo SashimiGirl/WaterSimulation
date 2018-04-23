@@ -25,6 +25,7 @@
  class Particles {
  public:
      Particles();
+     void gluCircle();
      void render() const;
      void step(){} // simulate one frame
  private:

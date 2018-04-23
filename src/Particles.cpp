@@ -33,6 +33,19 @@ Particles::Particles()
     }
 }
 
+void Particles:gluCircle(GLdouble radius)
+{
+    const float DEG2RAD = 3.14159/180;
+    glBegin(GL_LINE_LOOP);
+ 
+    for (int i=0; i &amp;lt; 360; i++)
+    {
+        float degInRad = i*DEG2RAD;
+        glVertex2f(cos(degInRad)*radius,sin(degInRad)*radius);
+    }
+    glEnd();
+}
+
 void Particles::render() const
 {
     GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -61,6 +74,7 @@ void Particles::render() const
         glPushMatrix();
         glTranslatef(par.p.x, par.p.y, par.p.z);
         //gluSphere(0.05, 10, 10);
+        gluCircle(0.05);
         glPopMatrix();
     }
 
