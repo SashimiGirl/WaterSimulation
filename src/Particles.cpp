@@ -4,16 +4,16 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   Particles.cpp
  * Author: swl
- * 
+ *
  * Created on April 15, 2016, 12:16 PM
  */
 
 #include "Particles.h"
 
-Particles::Particles() 
+Particles::Particles()
 {
     int nx = 10;
     int ny = 10;
@@ -43,7 +43,7 @@ void Particles::render() const
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    
+
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_DEPTH_TEST);
@@ -54,16 +54,15 @@ void Particles::render() const
     glColor3f(0.9, 0.9, 0.9);
     glColorMaterial(GL_FRONT, GL_AMBIENT);
     glColor3f(0.2, 0.5, 0.8);
-    
+
     for(const Particle &par : particles)
-    {    
-        
+    {
+
         glPushMatrix();
         glTranslatef(par.p.x, par.p.y, par.p.z);
-        glutSolidSphere(0.05, 10, 10);
+        gluSphere(0.05, 10, 10);
         glPopMatrix();
     }
-    
+
     glPopAttrib();
 }
-

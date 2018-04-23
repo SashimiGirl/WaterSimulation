@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 
 # Water simulation source
 set(FLUIDYFUN_VIEWER_SOURCE
@@ -30,6 +30,7 @@ add_definitions(${NANOGUI_EXTRA_DEFS})
 # Set include directories
 #-------------------------------------------------------------------------------
 include_directories(
+  ${GLAD_INCLUDE_DIRS}
   ${CGL_INCLUDE_DIRS}
   ${FREETYPE_INCLUDE_DIRS}
   ${NANOGUI_EXTRA_INCS}
@@ -46,20 +47,24 @@ link_directories(
 #-------------------------------------------------------------------------------
 # Add executable
 #-------------------------------------------------------------------------------
-add_executable(fluidyfun ${FLUIDYFUN_VIEWER_SOURCE})
+#add_executable(FluidyFun ${FLUIDYFUN_VIEWER_SOURCE})
+add_executable(FluidyFun ${SOURCES})
 
-target_link_libraries(fluidyfun
+target_link_libraries(FluidyFun
+    glad ${CMAKE_DL_LIBS}
     CGL ${CGL_LIBRARIES}
     nanogui ${NANOGUI_EXTRA_LIBS}
     ${FREETYPE_LIBRARIES}
     ${CMAKE_THREADS_INIT}
 )
 
+#target_link_libraries(${PROJECT_NAME} "glad" "${CMAKE_DL_LIBS}")
+
 #-------------------------------------------------------------------------------
 # Platform-specific configurations for target
 #-------------------------------------------------------------------------------
 if(APPLE)
-  set_property( TARGET fluidyfun APPEND_STRING PROPERTY COMPILE_FLAGS
+  set_property( TARGET FluidyFun APPEND_STRING PROPERTY COMPILE_FLAGS
                 "-Wno-deprecated-declarations -Wno-c++11-extensions")
 endif(APPLE)
 
@@ -67,4 +72,4 @@ endif(APPLE)
 set(EXECUTABLE_OUTPUT_PATH ..)
 
 # Install to project root
-install(TARGETS fluidyfun DESTINATION ${FluidyFun_SOURCE_DIR})
+install(TARGETS FluidyFun DESTINATION ${FluidyFun_SOURCE_DIR})
