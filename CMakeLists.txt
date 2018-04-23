@@ -2,6 +2,44 @@
 cmake_minimum_required(VERSION 3.1)
 project(FluidyFun)
 
+option(BUILD_DEBUG     "Build with debug settings"    OFF)
+option(ENABLE_TESTS    "Enable testing"               OFF)
+
+
+####################
+# Build on Windows #
+####################
+if(WIN32)
+
+  if(MSVC)
+
+    set(MSVC_CXX_FLAGS "-std=gnu++11")
+
+    if(BUILD_DEBUG)
+        set(CMAKE_BUILD_TYPE Debug)
+    else(BUILD_DEBUG)
+    endif(BUILD_DEBUG)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MSVC_CXX_FLAGS}")
+
+  endif(MSVC)
+
+  if(MINGW)
+
+    set(MSVC_CXX_FLAGS "-std=gnu++11")
+
+    if(BUILD_DEBUG)
+        set(CMAKE_BUILD_TYPE Debug)
+    else(BUILD_DEBUG)
+    endif(BUILD_DEBUG)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MSVC_CXX_FLAGS}")
+
+  endif(MINGW)
+
+endif(WIN32)
+
+
 # Source files
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
