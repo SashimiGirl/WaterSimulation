@@ -33,14 +33,14 @@ Particles::Particles()
     }
 }
 
-void Particles:gluCircle(GLdouble radius)
+void Particles::gluCircle(GLdouble radius) const
 {
     const float DEG2RAD = 3.14159/180;
-    glBegin(GL_LINE_LOOP);
- 
-    for (int i=0; i &amp;lt; 360; i++)
-    {
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(0,0);
+    for (int i=0; i < 360; i++) {
         float degInRad = i*DEG2RAD;
+        glColor3f(0.2, 0.5, 0.8);
         glVertex2f(cos(degInRad)*radius,sin(degInRad)*radius);
     }
     glEnd();
@@ -48,10 +48,11 @@ void Particles:gluCircle(GLdouble radius)
 
 void Particles::render() const
 {
+    //std::cout << "we render now!";
     GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
     GLfloat mat_shininess[] = { 50.0 };
     GLfloat light_position[] = { 10.0, 10.0, 10.0, 0.0 };
-    glShadeModel (GL_SMOOTH);
+    glShadeModel (GL_FLAT);
     glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);

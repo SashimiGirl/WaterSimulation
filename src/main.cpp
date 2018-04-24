@@ -25,7 +25,7 @@ int frame = 0;
 const int render_step = 3;
 int mx, my;
 
-Particles particles;
+Particles* particles = new Particles();
 /*
 void display(void);
 
@@ -101,13 +101,17 @@ int main(int argc, char** argv)
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
+    
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    
+    while (!glfwWindowShouldClose(window)) {
         /* Render here */
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
-
+        particles->step();
+        particles->render();
+        
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

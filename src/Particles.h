@@ -17,6 +17,7 @@
  #include <GLFW/glfw3.h>
  #include "glm/glm.hpp"
  #include <vector>
+ #include <iostream>
  #if defined(__APPLE_CC__)
  #else
  #include <math.h>
@@ -25,9 +26,16 @@
  class Particles {
  public:
      Particles();
-     void gluCircle();
+     void gluCircle(GLdouble radius) const;
      void render() const;
-     void step(){} // simulate one frame
+     
+     void step() {
+      for (Particle &par : particles) {
+        par.p += glm::dvec3(0.01, 0.01, 0.01);
+      }
+     
+     
+     } // simulate one frame
  private:
      struct Particle
      {
