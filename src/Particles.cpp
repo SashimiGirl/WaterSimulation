@@ -38,9 +38,9 @@ void Particles::gluCircle(GLdouble radius) const
     const float DEG2RAD = 3.14159/180;
     glBegin(GL_TRIANGLE_FAN);
     glVertex2f(0,0);
-    for (int i=0; i < 360; i++) {
+    glColor3f(0.2, 0.5, 0.8);
+    for (int i=0; i <= 360; i++) {
         float degInRad = i*DEG2RAD;
-        glColor3f(0.2, 0.5, 0.8);
         glVertex2f(cos(degInRad)*radius,sin(degInRad)*radius);
     }
     glEnd();
