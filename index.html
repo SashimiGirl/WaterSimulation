@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Final Project</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
+<h1 align="middle">Final Project: Water Simulator: Rubber Ducky Edition</h1>
+<h2 align="middle">Bradley Qu, Sara Maemoto, Benjamin Wu</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p> <b>Summary</b>: We are using point mass (small circles in OpenGL) to represent small collections of water molecules.
+  We have created overarching objects that hold attributes for physical objects. This will be used to help
+  control the interactions between the water and other objects in our scene. We will do equivalents in 3D
+  and then follow up with 3D physics, gravity, and consider the new frame of reference for our hopeful
+  final executable with a tipping bucket of water.<br/> <br/>
+
+  <b>Preliminary Results</b>: We managed to switch from the deprecated GLU/GLUT libraries in the given Particle class
+  to GLAD as our loader and created an executable file.
+  We then took steps to learn OpenGL and its rendering specifics/methods and created a simulation of
+  blue water particles as blue circles with natural variation.<br/> <br/>
+
+  <b>Status Check</b>: This first step to switch to GLAD for the load caused many more troubles than anticipated
+  to understand it (did not find good documentation for it and what to do after getting our glad.c).
+  As a result, we are slightly behind our original plans, but feel like this will follow more naturally
+  than understanding loading libraries, for example. <br/> <br/>
+
+  <b>Updated Plans</b>: We will complete interactions between molecules, both water-water and water-mesh, in 2D
+  and then extend this to 3D in the following two days (we have substantially thought and planned out the data structures and a BVH to do this).
+  We will then follow this with creating our environment and static objects/meshes such as a rubber duck
+  or a water container. This will follow in the next two-three days. <br/> <br/>
+
+  Finally, we will then see if this is efficiently viable and then consider optimizations such as those
+  discussed in class to render faster.
+</p>
+<h2 align="middle">Video</h2>
+<video width="640" height="480" controls>
+  <source src="milestone_video.mp4" type="video/mp4">
+</video>
+<h2 align="middle">Slides</h2>
+<p>https://docs.google.com/presentation/d/1PDKjWvF-StdM9QvsTa6in0t-3UjuOhCErVE7x31Q4ro/edit?usp=sharing</p>
+</body>
+</html>
