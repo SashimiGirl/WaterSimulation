@@ -64,6 +64,45 @@ void keyboard(unsigned char c, int x, int y)
     }
 }
 */
+
+
+void glLookAt(double x, double y, double z, double dx, double dy, double dz, double d) // look at x,y,z along vector dx,dy,dz from distance -d.
+{
+    glMatrixMode( GL_PROJECTION );
+    glLoadIdentity();
+    float fov = 0.01;
+    glFrustum(-fov, fov, fov, -fov, 0.01f, 10.0f);
+
+
+    glMatrixMode( GL_MODELVIEW );
+    glm::dvec3 w = glm::normalize(glm::dvec3(dx, dy, dz));
+    glm::dvec3 u = glm::dvec3(0, 1, 0);
+    glm::dvec3 r = glm::cross(r, u);
+    u = glm::cross(r,w);
+  //  GLdouble foo[16] = {
+    //      1.0,  0.0,  0.0,  0.0,
+      //    0.0,  1.0,  0.0,  0.0,
+        //  0.0,  0.0,  1.0,  0.0,
+          //0.0,  0.0,  -1.0,  1.0};
+    
+    GLdouble foo[16] = {
+          r.x,  r.y,  r.z,  0.0,
+          u.x,  u.y,  u.z,  0.0,
+         -w.x, -w.y, -w.z,  0.0,
+         -x+d*w.x, -y+d*w.y, -z+d*w.z, 1.0};
+    
+    glLoadMatrixd(foo);
+    //SDL_GL_SwapBuffers();  
+    //glLoadIdentity();
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //glRotatef(0, 1.0f, 0.0f, 0.0f);
+    //glRotatef(0, 0.0f, 1.0f, 0.0f);
+    //glRotatef(0, 0.0f, 0.0f, 1.0f);
+    //glTranslated(-x - d * dx, -y - d * dy, -z - d * dz);
+}
+
+
 int main(int argc, char** argv)
 {
     /**glutInit(&argc, argv);
@@ -103,7 +142,7 @@ int main(int argc, char** argv)
     /* Loop until the user closes the window */
     
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    
+    glLookAt(0.0, 0.0, 0.0, -0.0, -0.0, -1.0, 1.5);
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -122,6 +161,7 @@ int main(int argc, char** argv)
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
+
 /*
 void reshape(int w, int h)
 {
