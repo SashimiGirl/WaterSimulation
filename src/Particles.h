@@ -18,6 +18,7 @@
  #include "glm/glm.hpp"
  #include <vector>
  #include <stdio.h>
+ #include <iostream>
  #include <stdlib.h>
  #if defined(__APPLE_CC__)
  #else
