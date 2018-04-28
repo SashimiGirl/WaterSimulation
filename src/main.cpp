@@ -24,13 +24,9 @@ float dist = 2.5;
 int width = 800;
 int height = 800;
 float zoom = 0.0f;
-int iszoom = 0;
 int frame = 0;
 float rotationX = 0.0f;
 float rotationY = 0.0f;
-int isrotatedX = 0;
-int isrotatedY = 0;
-glm::dmat4 m = glm::dmat4(1.0f);
 const int render_step = 3;
 int mx, my;
 const glm::dvec3 u = glm::dvec3(0, 1, 0);
@@ -115,24 +111,16 @@ void keyboardFunc(GLFWwindow* win, int key, int scancode, int action, int mods) 
     if (action == GLFW_PRESS) {
         switch (key) {
             case GLFW_KEY_UP:
-                //m = glm::rotate(m, 5.0, glm::dvec3(1.0f, 0.0f, 0.0f));
                 rotationX += 5.0f;
-                isrotatedX = 1;
                 break;
             case GLFW_KEY_DOWN:
-                //m = glm::rotate(m, -5.0, glm::dvec3(1.0f, 0.0f, 0.0f));
                 rotationX -= 5.0f;
-                isrotatedX = 1;
                 break;
             case GLFW_KEY_LEFT:
-                //m = glm::rotate(m, 5.0, glm::dvec3(0.0f, 1.0f, 0.0f));
                 rotationY += 5.0f;
-                isrotatedY = 1;
                 break;
             case GLFW_KEY_RIGHT:
-                //m = glm::rotate(m, -5.0, glm::dvec3(0.0f, 1.0f, 0.0f));
                 rotationY -= 5.0f;
-                isrotatedY = 1;
                 break;
             default:
                 break;
@@ -142,7 +130,6 @@ void keyboardFunc(GLFWwindow* win, int key, int scancode, int action, int mods) 
 
 void scrollFunc(GLFWwindow* win, double x, double y) {
     zoom += 0.4f*y;
-    iszoom = 1;
 }
 
 int main(int argc, char** argv)
@@ -195,23 +182,6 @@ int main(int argc, char** argv)
         glMatrixMode(GL_PROJECTION);
         //start
         glLoadIdentity();
-
-        /*if (iszoom) {
-            glTranslatef(0.0f, 0.0f, zoom);
-            zoom = 0.0f;
-            iszoom = 0;
-        }
-        glMatrixMode(GL_MODELVIEW);
-        if (isrotatedX) {
-            glRotatef(rotationX, 1.0f, 0.0f, 0.0f);
-            rotationX = 0;
-            isrotatedX = 0;
-        }
-        if (isrotatedY) {
-            glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
-            rotationY = 0;
-            isrotatedY = 0;
-        }*/
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         glLookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.5);

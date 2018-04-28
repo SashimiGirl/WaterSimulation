@@ -164,6 +164,30 @@ Simulator.cpp.s:
 	$(MAKE) -f CMakeFiles/FluidyFun.dir/build.make CMakeFiles/FluidyFun.dir/Simulator.cpp.s
 .PHONY : Simulator.cpp.s
 
+SolidSphere.o: SolidSphere.cpp.o
+.PHONY : SolidSphere.o
+
+# target to build an object file
+SolidSphere.cpp.o:
+	$(MAKE) -f CMakeFiles/FluidyFun.dir/build.make CMakeFiles/FluidyFun.dir/SolidSphere.cpp.o
+.PHONY : SolidSphere.cpp.o
+
+SolidSphere.i: SolidSphere.cpp.i
+.PHONY : SolidSphere.i
+
+# target to preprocess a source file
+SolidSphere.cpp.i:
+	$(MAKE) -f CMakeFiles/FluidyFun.dir/build.make CMakeFiles/FluidyFun.dir/SolidSphere.cpp.i
+.PHONY : SolidSphere.cpp.i
+
+SolidSphere.s: SolidSphere.cpp.s
+.PHONY : SolidSphere.s
+
+# target to generate assembly for a file
+SolidSphere.cpp.s:
+	$(MAKE) -f CMakeFiles/FluidyFun.dir/build.make CMakeFiles/FluidyFun.dir/SolidSphere.cpp.s
+.PHONY : SolidSphere.cpp.s
+
 glad/src/glad.o: glad/src/glad.c.o
 .PHONY : glad/src/glad.o
 
@@ -226,6 +250,9 @@ help:
 	@echo "... Simulator.o"
 	@echo "... Simulator.i"
 	@echo "... Simulator.s"
+	@echo "... SolidSphere.o"
+	@echo "... SolidSphere.i"
+	@echo "... SolidSphere.s"
 	@echo "... glad/src/glad.o"
 	@echo "... glad/src/glad.i"
 	@echo "... glad/src/glad.s"
