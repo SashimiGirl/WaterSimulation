@@ -34,7 +34,7 @@
      void step() {
        
       for (Particle &par : particles) {
-        par.p += glm::dvec3(double(rand()) / RAND_MAX * 0.02,double(rand()) / RAND_MAX  * 0.02,double(rand()) / RAND_MAX  * 0.02) - glm::dvec3(0.01, 0.01, 0.01);
+        //par.p += glm::dvec3(double(rand()) / RAND_MAX * 0.02,double(rand()) / RAND_MAX  * 0.02,double(rand()) / RAND_MAX  * 0.02) - glm::dvec3(0.01, 0.01, 0.01);
       }
      
      

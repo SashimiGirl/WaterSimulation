@@ -5,6 +5,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Simulator.h"
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 #if OUTPUT_ANIMATION
 #include <opencv2/opencv.hpp>
@@ -21,7 +23,14 @@ float phi = -M_PI/8+M_PI_2;
 float dist = 2.5;
 int width = 800;
 int height = 800;
+float zoom = 0.0f;
+int iszoom = 0;
 int frame = 0;
+float rotationX = 0.0f;
+float rotationY = 0.0f;
+int isrotatedX = 0;
+int isrotatedY = 0;
+glm::dmat4 m = glm::dmat4(1.0f);
 const int render_step = 3;
 int mx, my;
 const glm::dvec3 u = glm::dvec3(0, 1, 0);
@@ -102,6 +111,39 @@ void glLookAt(double x, double y, double z, double dx, double dy, double dz, dou
     //glTranslated(-x - d * dx, -y - d * dy, -z - d * dz);
 }
 
+void keyboardFunc(GLFWwindow* win, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_UP:
+                //m = glm::rotate(m, 5.0, glm::dvec3(1.0f, 0.0f, 0.0f));
+                rotationX += 5.0f;
+                isrotatedX = 1;
+                break;
+            case GLFW_KEY_DOWN:
+                //m = glm::rotate(m, -5.0, glm::dvec3(1.0f, 0.0f, 0.0f));
+                rotationX -= 5.0f;
+                isrotatedX = 1;
+                break;
+            case GLFW_KEY_LEFT:
+                //m = glm::rotate(m, 5.0, glm::dvec3(0.0f, 1.0f, 0.0f));
+                rotationY += 5.0f;
+                isrotatedY = 1;
+                break;
+            case GLFW_KEY_RIGHT:
+                //m = glm::rotate(m, -5.0, glm::dvec3(0.0f, 1.0f, 0.0f));
+                rotationY -= 5.0f;
+                isrotatedY = 1;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void scrollFunc(GLFWwindow* win, double x, double y) {
+    zoom += 0.4f*y;
+    iszoom = 1;
+}
 
 int main(int argc, char** argv)
 {
@@ -136,21 +178,50 @@ int main(int argc, char** argv)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-
+    glfwSetKeyCallback(window, keyboardFunc);
+    glfwSetScrollCallback(window, scrollFunc);
+    //glfwSetCursorPosCallback(window, mouseFunc);
+    //glfwSetMouseButtonCallback(window, clickFunc);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
     /* Loop until the user closes the window */
     
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    glLookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.5);
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
+        glMatrixMode(GL_PROJECTION);
+        //start
+        glLoadIdentity();
+
+        /*if (iszoom) {
+            glTranslatef(0.0f, 0.0f, zoom);
+            zoom = 0.0f;
+            iszoom = 0;
+        }
+        glMatrixMode(GL_MODELVIEW);
+        if (isrotatedX) {
+            glRotatef(rotationX, 1.0f, 0.0f, 0.0f);
+            rotationX = 0;
+            isrotatedX = 0;
+        }
+        if (isrotatedY) {
+            glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
+            rotationY = 0;
+            isrotatedY = 0;
+        }*/
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glLookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.5);
+        glTranslatef(0.0f, 0.0f, zoom);
+        glRotatef(rotationX, 1.0f, 0.0f, 0.0f);
+        glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
         simulator->step();
+
         simulator->render();
-        
+
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

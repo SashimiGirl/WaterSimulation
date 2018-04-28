@@ -68,7 +68,6 @@ void Simulator::render() const
     glColor3f(0.9, 0.9, 0.9);
     glColorMaterial(GL_FRONT, GL_AMBIENT);
     glColor3f(0.2, 0.5, 0.8);
-
     for(const MeshObj &m : meshes)
     {
       continue;
