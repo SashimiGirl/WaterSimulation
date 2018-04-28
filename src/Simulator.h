@@ -15,11 +15,12 @@
  #define SIMULATOR_H
  #include <glad/glad.h>
  #include <GLFW/glfw3.h>
- #include "glm/glm.hpp"
  #include <vector>
  #include <stdio.h>
  #include <iostream>
  #include <stdlib.h>
+ #include "glm/glm.hpp"
+ #include "SolidSphere.h"
  #if defined(__APPLE_CC__)
  #else
  #include <math.h>
@@ -29,7 +30,8 @@
  public:
      Simulator();
      void gluCircle(GLdouble radius) const;
-     void render() const;
+     void glSphere(double x, double y, double z);
+     void render();
      
      void step() {
        
@@ -55,6 +57,7 @@
       
      std::vector<MeshObj> meshes;
      std::vector<Particle> particles;
+     SolidSphere sphere = SolidSphere();
  };
 
  #endif /* PARTICLES_H */

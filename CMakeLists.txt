@@ -47,6 +47,7 @@ set(SOURCES
 
 ${SRC_DIR}/main.cpp
 ${SRC_DIR}/Simulator.cpp
+${SRC_DIR}/SolidSphere.cpp
 
 )
 
