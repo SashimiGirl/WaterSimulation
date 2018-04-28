@@ -11,9 +11,9 @@
  * Created on April 15, 2016, 12:16 PM
  */
 
-#include "Particles.h"
+#include "Simulator.h"
 
-Particles::Particles()
+Simulator::Simulator()
 {
     int nx = 10;
     int ny = 10;
@@ -33,7 +33,7 @@ Particles::Particles()
     }
 }
 
-void Particles::gluCircle(GLdouble radius) const
+void Simulator::gluCircle(GLdouble radius) const
 {
     const float DEG2RAD = 3.14159/180;
     glBegin(GL_TRIANGLE_FAN);
@@ -46,7 +46,7 @@ void Particles::gluCircle(GLdouble radius) const
     glEnd();
 }
 
-void Particles::render() const
+void Simulator::render() const
 {
     //std::cout << "we render now!";
     GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -69,14 +69,19 @@ void Particles::render() const
     glColorMaterial(GL_FRONT, GL_AMBIENT);
     glColor3f(0.2, 0.5, 0.8);
 
+    for(const MeshObj &m : meshes)
+    {
+      continue;
+      //render meshes
+    }
+    
     for(const Particle &par : particles)
     {
-
-        glPushMatrix();
-        glTranslatef(par.p.x, par.p.y, par.p.z);
-        //gluSphere(0.05, 10, 10);
-        gluCircle(0.05);
-        glPopMatrix();
+      glPushMatrix();
+      glTranslatef(par.p.x, par.p.y, par.p.z);
+      //gluSphere(0.05, 10, 10);
+      gluCircle(0.05);
+      glPopMatrix();
     }
 
     glPopAttrib();

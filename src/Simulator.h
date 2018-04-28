@@ -11,8 +11,8 @@
  * Created on April 15, 2016, 12:16 PM
  */
 
- #ifndef PARTICLES_H
- #define PARTICLES_H
+ #ifndef SIMULATOR_H
+ #define SIMULATOR_H
  #include <glad/glad.h>
  #include <GLFW/glfw3.h>
  #include "glm/glm.hpp"
@@ -25,17 +25,17 @@
  #include <math.h>
  #endif
 
- class Particles {
+ class Simulator {
  public:
-     Particles();
+     Simulator();
      void gluCircle(GLdouble radius) const;
      void render() const;
      
      void step() {
        
-      //for (Particle &par : particles) {
-      //  par.p += glm::dvec3(double(rand()) / RAND_MAX * 0.02,double(rand()) / RAND_MAX  * 0.02,double(rand()) / RAND_MAX  * 0.02) - glm::dvec3(0.01, 0.01, 0.01);
-      //}
+      for (Particle &par : particles) {
+        par.p += glm::dvec3(double(rand()) / RAND_MAX * 0.02,double(rand()) / RAND_MAX  * 0.02,double(rand()) / RAND_MAX  * 0.02) - glm::dvec3(0.01, 0.01, 0.01);
+      }
      
      
      } // simulate one frame
@@ -44,8 +44,16 @@
      {
          glm::dvec3 p;
          glm::dvec3 v;
+         glm::dvec3 f;
      };
-
+     struct MeshObj
+     {
+         glm::dvec3 p;
+         glm::dvec3 v;
+         glm::dvec3 f;
+     };
+      
+     std::vector<MeshObj> meshes;
      std::vector<Particle> particles;
  };
 

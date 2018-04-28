@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "Particles.h"
+#include "Simulator.h"
 
 #if OUTPUT_ANIMATION
 #include <opencv2/opencv.hpp>
@@ -26,7 +26,7 @@ const int render_step = 3;
 int mx, my;
 const glm::dvec3 u = glm::dvec3(0, 1, 0);
 glm::dvec3 w = glm::dvec3(0, 0, -1);
-Particles* particles = new Particles();
+Simulator* simulator = new Simulator();
 /*
 void display(void);
 
@@ -148,8 +148,8 @@ int main(int argc, char** argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
-        particles->step();
-        particles->render();
+        simulator->step();
+        simulator->render();
         
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

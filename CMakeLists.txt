@@ -46,7 +46,7 @@ set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(SOURCES 
 
 ${SRC_DIR}/main.cpp
-${SRC_DIR}/Particles.cpp
+${SRC_DIR}/Simulator.cpp
 
 )
 
