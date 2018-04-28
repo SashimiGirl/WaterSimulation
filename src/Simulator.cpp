@@ -13,6 +13,7 @@
 
 #include "Simulator.h"
 
+
 Simulator::Simulator()
 {
     int nx = 10;
@@ -31,6 +32,8 @@ Simulator::Simulator()
             }
         }
     }
+    this->sphere = SolidSphere(d/2, (unsigned int) 8, (unsigned int) 10);
+    
 }
 
 void Simulator::gluCircle(GLdouble radius) const
@@ -46,13 +49,18 @@ void Simulator::gluCircle(GLdouble radius) const
     glEnd();
 }
 
-void Simulator::render() const
+void Simulator::glSphere(double x, double y, double z)
+{
+    this->sphere.draw(x, y, z);
+}
+
+void Simulator::render()
 {
     //std::cout << "we render now!";
     GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
     GLfloat mat_shininess[] = { 50.0 };
     GLfloat light_position[] = { 10.0, 10.0, 10.0, 0.0 };
-    glShadeModel (GL_FLAT);
+    glShadeModel (GL_SMOOTH);
     glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
@@ -76,11 +84,11 @@ void Simulator::render() const
     
     for(const Particle &par : particles)
     {
-      glPushMatrix();
-      glTranslatef(par.p.x, par.p.y, par.p.z);
+      //glPushMatrix();
+      //glTranslatef(par.p.x, par.p.y, par.p.z);
       //gluSphere(0.05, 10, 10);
-      gluCircle(0.05);
-      glPopMatrix();
+      glSphere(par.p.x, par.p.y, par.p.z);
+      //glPopMatrix();
     }
 
     glPopAttrib();
