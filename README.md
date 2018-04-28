@@ -1,14 +1,3 @@
-To set up project workspace:
+# Project 4: Cloth Simulation
 
-```
-$ mkdir build
-
-$ cd build
-
-$ cmake ..
-```
-
-To build, navigate to build director and run:
-```
-$ make
-```
+https://cs184.org/article/35

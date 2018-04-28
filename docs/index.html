@@ -15,51 +15,255 @@
     font-family: 'Source Sans Pro', sans-serif;
   }
 </style>
-<title>CS 184 Final Project</title>
+<title>CS 184 Mesh Editor</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
 </head>
 
 
 <body>
+
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
-<h1 align="middle">Final Project: Water Simulator: Rubber Ducky Edition</h1>
-<h2 align="middle">Bradley Qu, Sara Maemoto, Benjamin Wu</h2>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">Sara Maemoto, CS184-afb</h2>
 
 <br><br>
 
 <div>
 
 <h2 align="middle">Overview</h2>
-<p> <b>Summary</b>: We are using point mass (small circles in OpenGL) to represent small collections of water molecules.
-  We have created overarching objects that hold attributes for physical objects. This will be used to help
-  control the interactions between the water and other objects in our scene. We will do equivalents in 3D
-  and then follow up with 3D physics, gravity, and consider the new frame of reference for our hopeful
-  final executable with a tipping bucket of water.<br/> <br/>
+<p>In this project I implemented a real-time simulation of cloth. I used a mass and spring system in order to model real cloth. This project was split into 4 different parts, the first part is creating the data structures to hold point masses and springs to represent the cloth itself. Part 2 was calculating actual forces and applying position changes to point masses. Part 3 was handling collisions with other objects such as planes and spheres. Part 4 was dealing with collisions with itself.</p>
 
-  <b>Preliminary Results</b>: We managed to switch from the deprecated GLU/GLUT libraries in the given Particle class
-  to GLAD as our loader and created an executable file.
-  We then took steps to learn OpenGL and its rendering specifics/methods and created a simulation of
-  blue water particles as blue circles with natural variation.<br/> <br/>
+<h2 align="middle">Part I: Masses and springs</h2>
+<p>In this part of the project I created point masses to represent the cloth as well as a spring structure to represent the interactions between the points. I added 3 different types of constraints with the springs: structural, shear, and bending. The structural is for connecting each point to the previous points, the one above and the one to the left. which holds the cloth together. The shearing is for the tension caused by points to the upper left and upper right of the point which can create a shearing effect on the point. Lastly, the bending is for when the a cloth folds there is a slight pull in the direction of the fold. Such that the point 2 point masses away would know/feel the direction of that point.</p>
 
-  <b>Status Check</b>: This first step to switch to GLAD for the load caused many more troubles than anticipated
-  to understand it (did not find good documentation for it and what to do after getting our glad.c).
-  As a result, we are slightly behind our original plans, but feel like this will follow more naturally
-  than understanding loading libraries, for example. <br/> <br/>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part1_1.png" width="480px" />
+        <figcaption align="middle">Cloth Structure 1.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part1_2.png" width="480px" />
+        <figcaption align="middle">Cloth Structure 2.</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td align="middle">
+        <img src="images/Part1_only_shearing.png" width="480px" />
+        <figcaption align="middle">Cloth Structure with only shearing.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part1_no_shearing.png" width="480px" />
+        <figcaption align="middle">Cloth Structure without shearing.</figcaption>
+      </td>
+    </tr>
+  </table>
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part1_no_constraints.png" width="480px" />
+        <figcaption align="middle">Cloth Structure with all constraints.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
-  <b>Updated Plans</b>: We will complete interactions between molecules, both water-water and water-mesh, in 2D
-  and then extend this to 3D in the following two days (we have substantially thought and planned out the data structures and a BVH to do this).
-  We will then follow this with creating our environment and static objects/meshes such as a rubber duck
-  or a water container. This will follow in the next two-three days. <br/> <br/>
+<h2 align="middle">Part II: Simulation via numerical integration</h2>
+<p>In order to create the simulation, I had to apply forces to each point mass and calculate their position at every new time step. To do this I first calculated the external force on each point, in this case it was gravity. Next I calculated the force from each of the springs based on the position of the connecting point masses, the spring's rest length, and the spring's constant. After calculating and summing all of the forces acting on each point mass, I then calculated the point mass's new position. To do this I used Verlet integration. This calculation takes into account, the previous point and current point along with a delta time to represent velocity and uses the forces applied to the point mass to find the accelleration, and uses a damping term that is used to represent loss of energy due to friction. To keep springs from becoming unreasonably deformed, I implemented a deformation constraint based on the SIGGRAPH 1995 Provot paper. To do this I checked each spring and compared it's current length with it's rest length. If the spring's length was 10% greater than its rest length, then I would adjust the position of the point masses.</p>
 
-  Finally, we will then see if this is efficiently viable and then consider optimizations such as those
-  discussed in class to render faster.
-</p>
-<h2 align="middle">Video</h2>
-<video width="640" height="480" controls>
-  <source src="milestone_video.mp4" type="video/mp4">
-</video>
-<h2 align="middle">Slides</h2>
-<p>https://docs.google.com/presentation/d/1PDKjWvF-StdM9QvsTa6in0t-3UjuOhCErVE7x31Q4ro/edit?usp=sharing</p>
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part2.png" width="480px" />
+        <figcaption align="middle">Shaded cloth.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Changing the spring's constant results in variations like the following images. The image on the left has a low spring constant and creates a drooping effect. The change in the constant also effected the simulation of the cloth falling. The low spring constant had less force acting between the point masses and so created less of a spring effect.</p>
+
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part2_low_ks.png" width="480px" />
+        <figcaption align="middle">Low spring constant.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part2_high_ks.png" width="480px" />
+        <figcaption align="middle">High spring constant.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Changing the cloth's denisty changed the effect of external forces. With a lower density the cloth had less mass, which means less external force. This caused the cloth to cascade down in a whispy way. Also meant there was less pressure on each spring, which resulted in a more taut cloth.</p>
+
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part2_low_density.png" width="480px" />
+        <figcaption align="middle">Low density.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part2_high_density.png" width="480px" />
+        <figcaption align="middle">High density.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Changing the cloth's damping value effected the way the position changed in a delta time. The lower damping term created drastic changes in position very quickly, while the higher damping term very slowly changed position. Both of these effected the way the cloth fell.</p>
+
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part2_low_damping.png" width="480px" />
+        <figcaption align="middle">Low damping.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part2_high_damping.png" width="480px" />
+        <figcaption align="middle">High damping.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 align="middle">Part III: Handling Collisions with Other Objects</h2>
+<p>In this part I created 2 functions, one that handles collisions with spheres and another that handles collisions with planes. To account for sphere collisions, I checked whether a point was either inside or on the surface of the sphere. I did this by calculating the distance from the center of shere to my point and compared it to the radius of the sphere. If the point intersected, then I calculated a point outside of the sphere and created a direction vector from the point masses previous point to this point. This vector was calculated in order to incorporate friction by applying a scaling factor to the direction vector. To handle planes I used basically the same concept. I first checked to see if the point had intersected the plane by using it's previous position and it's current position to create a direction vector and a plane intersection equation to see if the point crossed the plane. If the point did, I used the normal vector of the plane to calculate a point on the other side of the plane. I added a small displacement to that point so it did not lie directly in the plane and then applied the friction scaling factor.</p>
+
+<p>As shown below, as the spring constant increases the cloth becomes more and more stiff. Lower spring constants allows for the cloth to stretch and becomes more of a fondoue type of consistancy.</p>
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part3_500.png" width="480px" />
+        <figcaption align="middle">Spring constant at 500.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part3_5000.png" width="480px" />
+        <figcaption align="middle">Spring constant at 5000.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part3_50000.png" width="480px" />
+        <figcaption align="middle">Spring constant at 50000.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Since the cloth started falling flat and the density of the cloth is evenly distributed, it caused the final position of the cloth on the floor to be flat as well.</p>
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part3_plane.png" width="480px" />
+        <figcaption align="middle">Stiff as a board, light as a feather.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 align="middle">Part IV: Handling Self-Collisions</h2>
+<p>To handle self-collisions while trying to keep my code as efficient as I can, I implemented a spatial hash map to check if a point had any potential collions. The spatial hash map consists of all of the point masses but are bunched together based on a 3D bounding box. I calculated this by producing a hash code that given a position that is within a bounding box, returns that bounding box's code. This made finding potential collisions easier by checking my current point mass with all of the point masses in it's bounding box. If the pointmass was within a certain thickness of another pointmass I would calculate a correction vector that would move the pointmass to an appropriate distance away. I averaged all of the correction vectors that were found and then applied it to my point. </p>
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part4_begin.png" width="480px" />
+        <figcaption align="middle">Cloth beginning to fall.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part4_middle.png" width="480px" />
+        <figcaption align="middle">Cloth in the middle of falling.</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td align="middle">
+        <img src="images/Part4_end.png" width="480px" />
+        <figcaption align="middle">Cloth at the end of its fall.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part4_resting.png" width="480px" />
+        <figcaption align="middle">Cloth at rest on the floor.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Changing the spring's constant results in not only a different final resting state, but also changes the way the cloth falls. With a low spring constant, there was a strange ripple effect that went through the cloth and then it started dragging on only parts of the cloth as shown in the top left image below. The cloth fell at a more normal rate with the higher spring constant, and so was its resting state.</p>
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part4_low_ks.png" width="480px" />
+        <figcaption align="middle">Cloth falling with low spring constant.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part4_low_ks_resting.png" width="480px" />
+        <figcaption align="middle">Cloth resting with low spring constant.</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td align="middle">
+        <img src="images/Part4_high_ks.png" width="480px" />
+        <figcaption align="middle">Cloth falling with high spring constant.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part4_high_ks_resting.png" width="480px" />
+        <figcaption align="middle">Cloth resting with high spring constant.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Changing the cloth's density again changes not only the final resting state, but also the way it falls. As the cloth falls with lower density, the top of the cloth is not as affected while compaing it to a cloth with a higher density.</p>
+
+
+<div align="center">
+  <table style="width=100%">
+    <tr>
+      <td align="middle">
+        <img src="images/Part4_low_density.png" width="480px" />
+        <figcaption align="middle">Cloth falling with low density.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part4_low_density_resting.png" width="480px" />
+        <figcaption align="middle">Cloth resting with low density.</figcaption>
+      </td>
+    </tr>
+    <tr>
+      <td align="middle">
+        <img src="images/Part4_high_density.png" width="480px" />
+        <figcaption align="middle">Cloth falling with high density.</figcaption>
+      </td>
+      <td align="middle">
+        <img src="images/Part4_high_density_resting.png" width="480px" />
+        <figcaption align="middle">Cloth resting with high density.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
 </body>
 </html>
