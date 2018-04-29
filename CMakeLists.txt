@@ -48,13 +48,17 @@ set(SOURCES
 ${SRC_DIR}/main.cpp
 ${SRC_DIR}/Simulator.cpp
 ${SRC_DIR}/SolidSphere.cpp
-
+${SRC_DIR}/MeshObject.cpp
 )
 
 # Executable definition and properties
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE "${SRC_DIR}")
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
+
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory 
+      ${SRC_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
+
 
 # GLFW
 #find_package(glfw3 REQUIRED)
@@ -81,3 +85,14 @@ add_library("glad" "${GLAD_DIR}/src/glad.c")
 target_include_directories("glad" PRIVATE "${GLAD_DIR}/include")
 target_include_directories(${PROJECT_NAME} PRIVATE "${GLAD_DIR}/include")
 target_link_libraries(${PROJECT_NAME} "glad" "${CMAKE_DL_LIBS}")
+
+
+# assimp
+set(ASSIMP_DIR "${LIB_DIR}/assimp")
+add_subdirectory("${ASSIMP_DIR}")
+target_include_directories(${PROJECT_NAME} PRIVATE "${ASSIMP_DIR}/include")
+target_link_libraries(${PROJECT_NAME} "assimp")
+
+
+
+

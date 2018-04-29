@@ -19,8 +19,15 @@
  #include <stdio.h>
  #include <iostream>
  #include <stdlib.h>
+ #include <assimp/Importer.hpp>
+ #include <assimp/scene.h>
+ #include <assimp/mesh.h>
  #include "glm/glm.hpp"
+ #include "glm/gtc/type_ptr.hpp"
+ #include "glm/gtc/matrix_transform.hpp"
  #include "SolidSphere.h"
+ #include "MeshObject.h"
+ #include "Mesh.h"
  #if defined(__APPLE_CC__)
  #else
  #include <math.h>
@@ -28,36 +35,41 @@
 
  class Simulator {
  public:
-     Simulator();
+     Simulator(GLuint id);
      void gluCircle(GLdouble radius) const;
      void glSphere(double x, double y, double z);
      void render();
-     
-     void step() {
-       
-      for (Particle &par : particles) {
-        par.p += glm::dvec3(double(rand()) / RAND_MAX * 0.02,double(rand()) / RAND_MAX  * 0.02,double(rand()) / RAND_MAX  * 0.02) - glm::dvec3(0.01, 0.01, 0.01);
-      }
-     
-     
-     } // simulate one frame
+     void step();
+     void load(std::string path);
+
  private:
+ /**
      struct Particle
      {
          glm::dvec3 p;
          glm::dvec3 v;
          glm::dvec3 f;
-     };
-     struct MeshObj
-     {
+         double density;
+         bool
+     };**/
+     
+     struct Obj {
+         enum OBJ_TYPE {
+			    PARTICLE, MESHOBJECT
+		     };
          glm::dvec3 p;
          glm::dvec3 v;
          glm::dvec3 f;
+         glm::dvec3 cm;
+         double density;
+         short type;
      };
-      
-     std::vector<MeshObj> meshes;
-     std::vector<Particle> particles;
+     
+     const glm::dvec3 gravity = glm::dvec3(0.0, -9.81, 0.0);
+     GLuint pid;
+     std::vector<Mesh*> meshes;
+     std::vector<Obj> objects;
      SolidSphere sphere = SolidSphere();
  };
 
- #endif /* PARTICLES_H */
+ #endif

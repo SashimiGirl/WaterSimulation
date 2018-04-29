@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <fstream>
+#include <sstream>
 #include "Simulator.h"
-
+#include "LoadShader.cpp"
 #if OUTPUT_ANIMATION
 #include <opencv2/opencv.hpp>
 #endif
@@ -15,18 +17,24 @@ inline float clip(const float& n, const float& lower, const float& upper)
 {
     return glm::max(lower, glm::min(n, upper));
 }
-
 float theta = M_PI/8;
 float phi = -M_PI/8+M_PI_2;
 float dist = 2.5;
 int width = 800;
 int height = 800;
 int frame = 0;
-const int render_step = 3;
 int mx, my;
+
+
+const int render_step = 3;
 const glm::dvec3 u = glm::dvec3(0, 1, 0);
+const char* vertex_file_path = "shaders/shader.vert";
+const char* fragment_file_path = "shaders/shader.frag";
+
+GLuint pid;
+glm::mat4 world_view_matrix = glm::mat4(1.0f);
+glm::mat4 projection_matrix = glm::mat4(1.0f);
 glm::dvec3 w = glm::dvec3(0, 0, -1);
-Simulator* simulator = new Simulator();
 /*
 void display(void);
 
@@ -69,29 +77,41 @@ void keyboard(unsigned char c, int x, int y)
 
 void glLookAt(double x, double y, double z, double dx, double dy, double dz, double d) // look at x,y,z along vector dx,dy,dz from distance -d.
 {
-    glMatrixMode( GL_PROJECTION );
-    glLoadIdentity();
     float fov = 0.01;
-    glFrustum(-fov, fov, fov, -fov, 0.01f, 10.0f);
+    projection_matrix = glm::frustum(-fov, fov, -fov, fov, 0.01f, 10.0f);
+    //transform here
+    GLuint loc = glGetUniformLocation(pid, "projectionMatrix");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(projection_matrix)); 
 
-
-    glMatrixMode( GL_MODELVIEW );
     w = glm::normalize(glm::dvec3(dx, dy, dz));
     glm::dvec3 r = glm::normalize(glm::cross(w, u));
-    glm::dvec3 ul = glm::cross(r, w);
-  //  GLdouble foo[16] = {
+    glm::dvec4 wl = glm::dvec4(w, 0.0);
+    glm::dvec4 rl = glm::dvec4(r, 0.0);
+    glm::dvec4 ul = glm::dvec4(glm::cross(r, w), 0.0);
+    glm::dvec4 trans = glm::vec4(-x+d*w.x, -y+d*w.y, -z+d*w.z, 1.0);
+    world_view_matrix = glm::mat4(rl, ul, -wl, trans);
+    loc = glGetUniformLocation(pid, "modelViewMatrix");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(world_view_matrix));
+    
+    //glMatrixMode( GL_PROJECTION );
+    //glLoadIdentity();
+    //glFrustum(-fov, fov, fov, -fov, 0.01f, 10.0f);
+    
+    
+    
+    //glMatrixMode( GL_MODELVIEW );
+      //  GLdouble foo[16] = {
     //      1.0,  0.0,  0.0,  0.0,
       //    0.0,  1.0,  0.0,  0.0,
         //  0.0,  0.0,  1.0,  0.0,
           //0.0,  0.0,  -1.0,  1.0};
     
-    GLdouble foo[16] = {
-          r.x,  r.y,  r.z,  0.0,
-          ul.x,  ul.y,  ul.z,  0.0,
-         -w.x, -w.y, -w.z,  0.0,
-         -x+d*w.x, -y+d*w.y, -z+d*w.z, 1.0};
-    
-    glLoadMatrixd(foo);
+ //   GLfloat foo[16] = {
+   //       r.x,  r.y,  r.z,  0.0,
+     //     ul.x,  ul.y,  ul.z,  0.0,
+       //  -w.x, -w.y, -w.z,  0.0,
+         //-x+d*w.x, -y+d*w.y, -z+d*w.z, 1.0};
+    //glLoadMatrixd(foo);
     //SDL_GL_SwapBuffers();  
     //glLoadIdentity();
     //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -102,24 +122,8 @@ void glLookAt(double x, double y, double z, double dx, double dy, double dz, dou
     //glTranslated(-x - d * dx, -y - d * dy, -z - d * dz);
 }
 
-
 int main(int argc, char** argv)
 {
-    /**glutInit(&argc, argv);
-
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(width, height);
-
-    (void)glutCreateWindow("GLUT Program");
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
-    glutIdleFunc(idle);
-    glutMouseFunc(mouse);
-    glutMotionFunc(motion);
-    glutMainLoop();
-    glutKeyboardFunc(keyboard);
-
-    return EXIT_SUCCESS;**/
     GLFWwindow* window;
 
     /* Initialize the library */
@@ -140,9 +144,23 @@ int main(int argc, char** argv)
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
     /* Loop until the user closes the window */
+    pid = LoadShaders(vertex_file_path, fragment_file_path);
+    glUseProgram(pid);
     
     glClearColor(0.0, 0.0, 0.0, 1.0);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     glLookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.5);
+    
+    Simulator* simulator = new Simulator(pid);
+    
+    for (int i = 1; i > argc; i += 1) {
+      std::string path = argv[i];
+      simulator->load(path);
+    }
+    
+    //return EXIT_SUCCESS; // FIXME: temporary escape to test init.
+    
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -156,6 +174,8 @@ int main(int argc, char** argv)
 
         /* Poll for and process events */
         glfwPollEvents();
+        
+        //return EXIT_SUCCESS; // FIXME: temporary escape to test init.
     }
     glfwDestroyWindow(window);
     glfwTerminate();
