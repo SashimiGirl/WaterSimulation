@@ -8,11 +8,9 @@
 #include <sstream>
 #include "Simulator.h"
 #include "LoadShader.cpp"
-=======
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-
->>>>>>> dab236dffebda5fdb883dd3aaf31be9a846bc325
+#include <glm/gtc/matrix_transform.hpp>
 #if OUTPUT_ANIMATION
 #include <opencv2/opencv.hpp>
 #endif
@@ -27,15 +25,13 @@ float phi = -M_PI/8+M_PI_2;
 float dist = 2.5;
 int width = 800;
 int height = 800;
-float zoom = 0.0f;
+float zoom = 1.0f;
 int frame = 0;
 float rotationX = 0.0f;
 float rotationY = 0.0f;
 const int render_step = 3;
 int mx, my;
 
-
-const int render_step = 3;
 const glm::dvec3 u = glm::dvec3(0, 1, 0);
 const char* vertex_file_path = "shaders/shader.vert";
 const char* fragment_file_path = "shaders/shader.frag";
@@ -84,67 +80,37 @@ void keyboard(unsigned char c, int x, int y)
 */
 
 
-void glLookAt(double x, double y, double z, double dx, double dy, double dz, double d) // look at x,y,z along vector dx,dy,dz from distance -d.
+void glLookAt(glm::vec3 pos, glm::vec3 dir, float d) // look at x,y,z along vector dx,dy,dz from distance -d.
 {
-    float fov = 0.01;
+    w = glm::normalize(dir);
+    glm::vec3 eye = pos - d * dir;
+    glm::vec3 up(0.0, 1.0, 0.0);
+    world_view_matrix = glm::lookAt(eye, pos, up);
+    GLuint loc = glGetUniformLocation(pid, "modelViewMatrix");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(world_view_matrix));
+}
+
+void glFrustum(float fov, float near, float far) {
     projection_matrix = glm::frustum(-fov, fov, -fov, fov, 0.01f, 10.0f);
     //transform here
     GLuint loc = glGetUniformLocation(pid, "projectionMatrix");
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(projection_matrix)); 
-
-    w = glm::normalize(glm::dvec3(dx, dy, dz));
-    glm::dvec3 r = glm::normalize(glm::cross(w, u));
-    glm::dvec4 wl = glm::dvec4(w, 0.0);
-    glm::dvec4 rl = glm::dvec4(r, 0.0);
-    glm::dvec4 ul = glm::dvec4(glm::cross(r, w), 0.0);
-    glm::dvec4 trans = glm::vec4(-x+d*w.x, -y+d*w.y, -z+d*w.z, 1.0);
-    world_view_matrix = glm::mat4(rl, ul, -wl, trans);
-    loc = glGetUniformLocation(pid, "modelViewMatrix");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(world_view_matrix));
-    
-    //glMatrixMode( GL_PROJECTION );
-    //glLoadIdentity();
-    //glFrustum(-fov, fov, fov, -fov, 0.01f, 10.0f);
-    
-    
-    
-    //glMatrixMode( GL_MODELVIEW );
-      //  GLdouble foo[16] = {
-    //      1.0,  0.0,  0.0,  0.0,
-      //    0.0,  1.0,  0.0,  0.0,
-        //  0.0,  0.0,  1.0,  0.0,
-          //0.0,  0.0,  -1.0,  1.0};
-    
- //   GLfloat foo[16] = {
-   //       r.x,  r.y,  r.z,  0.0,
-     //     ul.x,  ul.y,  ul.z,  0.0,
-       //  -w.x, -w.y, -w.z,  0.0,
-         //-x+d*w.x, -y+d*w.y, -z+d*w.z, 1.0};
-    //glLoadMatrixd(foo);
-    //SDL_GL_SwapBuffers();  
-    //glLoadIdentity();
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //glRotatef(0, 1.0f, 0.0f, 0.0f);
-    //glRotatef(0, 0.0f, 1.0f, 0.0f);
-    //glRotatef(0, 0.0f, 0.0f, 1.0f);
-    //glTranslated(-x - d * dx, -y - d * dy, -z - d * dz);
 }
 
 void keyboardFunc(GLFWwindow* win, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
         switch (key) {
             case GLFW_KEY_UP:
-                rotationX += 5.0f;
+                rotationX += 0.08f;
                 break;
             case GLFW_KEY_DOWN:
-                rotationX -= 5.0f;
+                rotationX -= 0.08f;
                 break;
             case GLFW_KEY_LEFT:
-                rotationY += 5.0f;
+                rotationY += 0.08f;
                 break;
             case GLFW_KEY_RIGHT:
-                rotationY -= 5.0f;
+                rotationY -= 0.08f;
                 break;
             default:
                 break;
@@ -187,8 +153,9 @@ int main(int argc, char** argv)
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glLookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.5);
-    
+    glFrustum(0.01, 0.01, 10);
+   // glLookAt(glm::dvec3(0.0, 0.0, 0.0), glm::dvec3(0.0, 0.0, -1.0), 1.0);
+    glm::vec3 orig(0.0, 0.0, 0.0);
     Simulator* simulator = new Simulator(pid);
     
     for (int i = 1; i > argc; i += 1) {
@@ -196,22 +163,16 @@ int main(int argc, char** argv)
       simulator->load(path);
     }
     
-    //return EXIT_SUCCESS; // FIXME: temporary escape to test init.
-    
     while (!glfwWindowShouldClose(window)) {
-        /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
-        glMatrixMode(GL_PROJECTION);
-        //start
-        glLoadIdentity();
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glLookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.5);
-        glTranslatef(0.0f, 0.0f, zoom);
-        glRotatef(rotationX, 1.0f, 0.0f, 0.0f);
-        glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
+
+        glm::vec3 view = glm::rotate(rotationY, glm::vec3(0.0, 1.0, 0.0)) * 
+                          glm::rotate(rotationX, glm::vec3(1.0, 0.0, 0.0)) * 
+                          glm::vec4(0.0, 0.0, -1.0, 0.0);
+        glLookAt(orig, view, zoom);
+
         simulator->step();
 
         simulator->render();
@@ -222,7 +183,6 @@ int main(int argc, char** argv)
         /* Poll for and process events */
         glfwPollEvents();
         
-        //return EXIT_SUCCESS; // FIXME: temporary escape to test init.
     }
     glfwDestroyWindow(window);
     glfwTerminate();

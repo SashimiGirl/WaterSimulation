@@ -76,9 +76,6 @@ SolidSphere::SolidSphere (float radius)
     *n++ = n3.x; *n++ = n3.y; *n++ = n3.z;
   }
   
-  //shader.uploadAttrib("in_position", positions);
-  //shader.uploadAttrib("in_normal", normals);
-  
 	glGenBuffers(1, &vbo[VERTEX_BUFFER]);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_BUFFER]);
 	glBufferData(GL_ARRAY_BUFFER, 3 * SPHERE_NUM_INDICES * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
@@ -93,11 +90,8 @@ SolidSphere::SolidSphere (float radius)
 	glBufferData(GL_ARRAY_BUFFER, 2 * faces * sizeof(GLfloat), tt, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray (vao, 1);
-	delete[] tt;**
 
-	delete[] n;
-	delete[] nbc;
-	
+
 	unsigned int *i = new unsigned int[faces * 4];
 	for(r = 0; r < rings-1; r++) for(s = 0; s < sectors-1; s++) {
     *i++ = r * sectors + s;
@@ -120,13 +114,9 @@ SolidSphere::SolidSphere (float radius)
 
 void SolidSphere::draw (GLfloat x, GLfloat y, GLfloat z, GLuint pid)
 {
-    //glMatrixMode(GL_MODELVIEW);
-    //glPushMatrix();
-    //glTranslatef(x,y,z);
     glBindVertexArray(vao);
     GLuint loc = glGetUniformLocation(pid, "modelMatrix");
     glm::mat4 model_matrix(r, 0, 0, 0, 0, r, 0, 0, 0, 0, r, 0, x, y, z, 1);
-    //glm::mat4 model_matrix = glm::translate(glm::mat4(r), glm::vec3(x, y, z));
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(model_matrix)); 
     
     glEnableVertexAttribArray (0);
@@ -149,11 +139,5 @@ void SolidSphere::draw (GLfloat x, GLfloat y, GLfloat z, GLuint pid)
     
 	  glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, NULL);
 	  glBindVertexArray(0);
-	  /**
-    glVertexPointer(3, GL_FLOAT, 0, &vertices[0]);
-    glNormalPointer(GL_FLOAT, 0, &normals[0]);
-    glTexCoordPointer(2, GL_FLOAT, 0, &texcoords[0]);
-    glDrawElements(GL_QUADS, indices.size(), GL_UNSIGNED_SHORT, &indices[0]);
     **/
-    //glPopMatrix();
 }
