@@ -4,10 +4,10 @@
 #include <CGL/vector3D.h>
 #include <nanogui/nanogui.h>
 
-#include "clothSimulator.h"
+#include "waterSimulator.h"
 
 #include "camera.h"
-#include "cloth.h"
+#include "water.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
 #include "misc/camera_info.h"
@@ -15,7 +15,7 @@
 using namespace nanogui;
 using namespace std;
 
-ClothSimulator::ClothSimulator(Screen *screen) {
+WaterSimulator::WaterSimulator(Screen *screen) {
   this->screen = screen;
 
   // Initialize OpenGL buffers and shaders
@@ -35,27 +35,27 @@ ClothSimulator::ClothSimulator(Screen *screen) {
   glEnable(GL_DEPTH_TEST);
 }
 
-ClothSimulator::~ClothSimulator() {
+WaterSimulator::~WaterSimulator() {
   for (auto shader : shaders) {
     shader.free();
   }
 
-  if (cloth) delete cloth;
-  if (cp) delete cp;
+  if (water) delete water;
+  if (wp) delete wp;
   if (collision_objects) delete collision_objects;
 }
 
-void ClothSimulator::loadCloth(Cloth *cloth) { this->cloth = cloth; }
+void WaterSimulator::loadWater(Water *water) { this->water = water; }
 
-void ClothSimulator::loadClothParameters(ClothParameters *cp) { this->cp = cp; }
+void WaterSimulator::loadWaterParameters(WaterParameters *cp) { this->wp = wp; }
 
-void ClothSimulator::loadCollisionObjects(vector<CollisionObject *> *objects) { this->collision_objects = objects; }
+void WaterSimulator::loadCollisionObjects(vector<CollisionObject *> *objects) { this->collision_objects = objects; }
 
 /**
  * Initializes the cloth simulation and spawns a new thread to separate
  * rendering from simulation.
  */
-void ClothSimulator::init() {
+void WaterSimulator::init() {
   // Initialize GUI
   initGUI(screen);
   screen->setSize(default_window_size);
@@ -70,14 +70,14 @@ void ClothSimulator::init() {
 
   // Try to intelligently figure out the camera target
 
-  Vector3D avg_pm_position(0, 0, 0);
+  Vector3D target(0, 0, 0);
 /*
   for (auto &pm : cloth->point_masses) {
     avg_pm_position += pm.position / cloth->point_masses.size();
   }
 */
-  CGL::Vector3D target(avg_pm_position.x, avg_pm_position.y / 2,
-                       avg_pm_position.z);
+ // CGL::Vector3D target(avg_pm_position.x, avg_pm_position.y / 2,
+  //                     avg_pm_position.z);
   CGL::Vector3D c_dir(0., 0., 0.);
   //canonical_view_distance = max(cloth->width, cloth->height) * 0.9;
   canonical_view_distance = 2.0 * 0.9;
@@ -101,9 +101,9 @@ void ClothSimulator::init() {
   canonicalCamera.configure(camera_info, screen_w, screen_h);
 }
 
-bool ClothSimulator::isAlive() { return is_alive; }
+bool WaterSimulator::isAlive() { return is_alive; }
 
-void ClothSimulator::drawContents() {
+void WaterSimulator::drawContents() {
   glEnable(GL_DEPTH_TEST);
 
 
@@ -111,7 +111,7 @@ void ClothSimulator::drawContents() {
     vector<Vector3D> external_accelerations = {gravity};
 
     for (int i = 0; i < simulation_steps; i++) {
-      cloth->simulate(frames_per_sec, simulation_steps, cp, external_accelerations, collision_objects);
+      water->simulate(frames_per_sec, simulation_steps, wp, external_accelerations, collision_objects);
     }
   }
 
@@ -147,40 +147,13 @@ void ClothSimulator::drawContents() {
   for (CollisionObject *co : *collision_objects) {
     co->render(shader);
   }
-  for (PointMass pm : this->cloth->point_masses) {
+  for (PointMass pm : this->water->point_masses) {
     pm.render(shader);
   }
 }
 
-void ClothSimulator::drawWireframe(GLShader &shader) {
-  int num_structural_springs =
-      2 * cloth->num_width_points * cloth->num_height_points -
-      cloth->num_width_points - cloth->num_height_points;
-  int num_shear_springs =
-      2 * (cloth->num_width_points - 1) * (cloth->num_height_points - 1);
-  int num_bending_springs = num_structural_springs - cloth->num_width_points -
-                            cloth->num_height_points;
-
-  int num_springs = cp->enable_structural_constraints * num_structural_springs +
-                    cp->enable_shearing_constraints * num_shear_springs +
-                    cp->enable_bending_constraints * num_bending_springs;
-
-  MatrixXf positions(3, num_springs * 2);
-  MatrixXf normals(3, num_springs * 2);
-
-  // Draw springs as lines
-
-  int si = 0;
-
-  for (int i = 0; i < cloth->springs.size(); i++) {
-    Spring s = cloth->springs[i];
-/*
-    if ((s.spring_type == STRUCTURAL && !cp->enable_structural_constraints) ||
-        (s.spring_type == SHEARING && !cp->enable_shearing_constraints) ||
-        (s.spring_type == BENDING && !cp->enable_bending_constraints)) {
-      continue;
-    }
-*/
+void WaterSimulator::drawWireframe(GLShader &shader) {//draw wireframe on surface?
+  /*
     Vector3D pa = s.pm_a->position;
     Vector3D pb = s.pm_b->position;
 
@@ -198,17 +171,17 @@ void ClothSimulator::drawWireframe(GLShader &shader) {
 
   shader.setUniform("in_color", nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f));
   shader.uploadAttrib("in_position", positions);
-  shader.drawArray(GL_LINES, 0, num_springs * 2);
+  shader.drawArray(GL_LINES, 0, num_springs * 2);*/
 }
 
-void ClothSimulator::drawNormals(GLShader &shader) {
-  int num_tris = cloth->clothMesh->triangles.size();
+void WaterSimulator::drawNormals(GLShader &shader) {
+  int num_tris = water->surfaceMesh->triangles.size();
 
   MatrixXf positions(3, num_tris * 3);
   MatrixXf normals(3, num_tris * 3);
 
   for (int i = 0; i < num_tris; i++) {
-    Triangle *tri = cloth->clothMesh->triangles[i];
+    Triangle *tri = water->surfaceMesh->triangles[i];
 
     Vector3D p1 = tri->pm1->position;
     Vector3D p2 = tri->pm2->position;
@@ -233,14 +206,14 @@ void ClothSimulator::drawNormals(GLShader &shader) {
   shader.drawArray(GL_TRIANGLES, 0, num_tris * 3);
 }
 
-void ClothSimulator::drawPhong(GLShader &shader) {
-  int num_tris = cloth->clothMesh->triangles.size();
+void WaterSimulator::drawPhong(GLShader &shader) {
+  int num_tris = water->surfaceMesh->triangles.size();
 
   MatrixXf positions(3, num_tris * 3);
   MatrixXf normals(3, num_tris * 3);
 
   for (int i = 0; i < num_tris; i++) {
-    Triangle *tri = cloth->clothMesh->triangles[i];
+    Triangle *tri = water->surfaceMesh->triangles[i];
 
     Vector3D p1 = tri->pm1->position;
     Vector3D p2 = tri->pm2->position;
@@ -278,9 +251,9 @@ void ClothSimulator::drawPhong(GLShader &shader) {
 // functions that have to be recreated here.
 // ----------------------------------------------------------------------------
 
-void ClothSimulator::resetCamera() { camera.copy_placement(canonicalCamera); }
+void WaterSimulator::resetCamera() { camera.copy_placement(canonicalCamera); }
 
-Matrix4f ClothSimulator::getProjectionMatrix() {
+Matrix4f WaterSimulator::getProjectionMatrix() {
   Matrix4f perspective;
   perspective.setZero();
 
@@ -301,7 +274,7 @@ Matrix4f ClothSimulator::getProjectionMatrix() {
   return perspective;
 }
 
-Matrix4f ClothSimulator::getViewMatrix() {
+Matrix4f WaterSimulator::getViewMatrix() {
   Matrix4f lookAt;
   Matrix3f R;
 
@@ -333,7 +306,7 @@ Matrix4f ClothSimulator::getViewMatrix() {
 // EVENT HANDLING
 // ----------------------------------------------------------------------------
 
-bool ClothSimulator::cursorPosCallbackEvent(double x, double y) {
+bool WaterSimulator::cursorPosCallbackEvent(double x, double y) {
   if (left_down && !middle_down && !right_down) {
     if (ctrl_down) {
       mouseRightDragged(x, y);
@@ -352,7 +325,7 @@ bool ClothSimulator::cursorPosCallbackEvent(double x, double y) {
   return true;
 }
 
-bool ClothSimulator::mouseButtonCallbackEvent(int button, int action,
+bool WaterSimulator::mouseButtonCallbackEvent(int button, int action,
                                               int modifiers) {
   switch (action) {
   case GLFW_PRESS:
@@ -387,20 +360,20 @@ bool ClothSimulator::mouseButtonCallbackEvent(int button, int action,
   return false;
 }
 
-void ClothSimulator::mouseMoved(double x, double y) { y = screen_h - y; }
+void WaterSimulator::mouseMoved(double x, double y) { y = screen_h - y; }
 
-void ClothSimulator::mouseLeftDragged(double x, double y) {
+void WaterSimulator::mouseLeftDragged(double x, double y) {
   float dx = x - mouse_x;
   float dy = y - mouse_y;
 
   camera.rotate_by(-dy * (PI / screen_h), -dx * (PI / screen_w));
 }
 
-void ClothSimulator::mouseRightDragged(double x, double y) {
+void WaterSimulator::mouseRightDragged(double x, double y) {
   camera.move_by(mouse_x - x, y - mouse_y, canonical_view_distance);
 }
 
-bool ClothSimulator::keyCallbackEvent(int key, int scancode, int action,
+bool WaterSimulator::keyCallbackEvent(int key, int scancode, int action,
                                       int mods) {
   ctrl_down = (bool)(mods & GLFW_MOD_CONTROL);
 
@@ -411,7 +384,7 @@ bool ClothSimulator::keyCallbackEvent(int key, int scancode, int action,
       break;
     case 'r':
     case 'R':
-      cloth->reset();
+      water->reset();
       break;
     case ' ':
       resetCamera();
@@ -434,16 +407,16 @@ bool ClothSimulator::keyCallbackEvent(int key, int scancode, int action,
   return true;
 }
 
-bool ClothSimulator::dropCallbackEvent(int count, const char **filenames) {
+bool WaterSimulator::dropCallbackEvent(int count, const char **filenames) {
   return true;
 }
 
-bool ClothSimulator::scrollCallbackEvent(double x, double y) {
+bool WaterSimulator::scrollCallbackEvent(double x, double y) {
   camera.move_forward(y * scroll_rate);
   return true;
 }
 
-bool ClothSimulator::resizeCallbackEvent(int width, int height) {
+bool WaterSimulator::resizeCallbackEvent(int width, int height) {
   screen_w = width;
   screen_h = height;
 
@@ -451,7 +424,7 @@ bool ClothSimulator::resizeCallbackEvent(int width, int height) {
   return true;
 }
 
-void ClothSimulator::initGUI(Screen *screen) {
+void WaterSimulator::initGUI(Screen *screen) {
   Window *window = new Window(screen, "Settings");
   window->setPosition(Vector2i(15, 15));
   window->setLayout(new GroupLayout(15, 6, 14, 5));

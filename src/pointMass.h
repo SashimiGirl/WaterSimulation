@@ -15,7 +15,7 @@ using namespace nanogui;
 class Halfedge;
 
 struct PointMass {
-  PointMass(Vector3D pos, bool pinned) : start_position(pos), position(pos), radius(0.01), friction(0.2), last_position(pos) {}
+  PointMass(Vector3D pos, double radius) : start_position(pos), position(pos), radius(radius), friction(0.2), last_position(pos) {}
 
   void collide(PointMass &pm);
   void render(GLShader &shader);
@@ -27,7 +27,6 @@ struct PointMass {
   // static values
   Vector3D start_position;
   double radius;
-  bool pinned;
   double friction;
 
   // dynamic values

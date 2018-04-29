@@ -1,23 +1,23 @@
-#ifndef CGL_CLOTH_SIMULATOR_H
-#define CGL_CLOTH_SIMULATOR_H
+#ifndef CGL_WATER_SIMULATOR_H
+#define CGL_WATER_SIMULATOR_H
 
 #include <nanogui/nanogui.h>
 
 #include "camera.h"
-#include "cloth.h"
+#include "water.h"
 #include "collision/collisionObject.h"
 
 using namespace nanogui;
 
-class ClothSimulator {
+class WaterSimulator {
 public:
-  ClothSimulator(Screen *screen);
-  ~ClothSimulator();
+  WaterSimulator(Screen *screen);
+  ~WaterSimulator();
 
   void init();
 
-  void loadCloth(Cloth *cloth);
-  void loadClothParameters(ClothParameters *cp);
+  void loadWater(Water *water);
+  void loadWaterParameters(WaterParameters *wp);
   void loadCollisionObjects(vector<CollisionObject *> *objects);
   virtual bool isAlive();
   virtual void drawContents();
@@ -48,11 +48,11 @@ private:
   int frames_per_sec = 90;
   int simulation_steps = 30;
 
-  CGL::Vector3D gravity = CGL::Vector3D(0, -9.8, 0);
+  CGL::Vector3D gravity = CGL::Vector3D(0, -9.81, 0);
   nanogui::Color color = nanogui::Color(1.0f, 0.0f, 0.0f, 1.0f);
 
-  Cloth *cloth;
-  ClothParameters *cp;
+  Water *water;
+  WaterParameters *wp;
   vector<CollisionObject *> *collision_objects;
 
   // OpenGL attributes
@@ -112,4 +112,4 @@ private:
   Vector2i default_window_size = Vector2i(1024, 800);
 };
 
-#endif // CGL_CLOTH_SIM_H
+#endif // CGL_WATER_SIM_H

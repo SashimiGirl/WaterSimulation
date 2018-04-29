@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 # Cloth simulation source
 set(CLOTHSIM_VIEWER_SOURCE
     # Cloth simulation objects
-    cloth.cpp
+    water.cpp
     clothMesh.cpp
     pointMass.cpp    
 
@@ -13,7 +13,7 @@ set(CLOTHSIM_VIEWER_SOURCE
 
     # Application
     main.cpp
-    clothSimulator.cpp
+    waterSimulator.cpp
 
     # Miscellaneous
     # png.cpp
