@@ -16,9 +16,9 @@
 
 Simulator::Simulator(GLuint id)
 {
-    int nx = 10;
-    int ny = 10;
-    int nz = 10;
+    int nx = 50;
+    int ny = 50;
+    int nz = 50;
     float d = 0.1;
     for(int x=0; x<nx; x++)
     {
