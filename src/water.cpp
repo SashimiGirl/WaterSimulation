@@ -45,21 +45,36 @@ void Water::buildVolume() {
 void Water::simulate(double frames_per_sec, double simulation_steps, WaterParameters *wp,
                      vector<Vector3D> external_accelerations,
                      vector<CollisionObject *> *collision_objects) {
-  double mass = wp->density;
+  //double mass = wp->density;
+  wp->damping = 0.2;
+  double mass = 0.001;
   double delta_t = 1.0f / frames_per_sec / simulation_steps;
   for (int i = 0; i < point_masses.size(); i++) {
-    point_masses[i].forces = Vector3D();
+    point_masses[i].forces = 0;
     for (int j = 0; j < external_accelerations.size(); j++) {
+      //point_masses[i].forces += 0.001 * external_accelerations[0];
       point_masses[i].forces += mass * external_accelerations[j];
     }
   }
+
   /*
   build_spatial_map();
   for (PointMass &pm : point_masses) {
     self_collide(pm, simulation_steps);
   }*/
-
   /*
+  printf("mass: %f\n", mass);
+
+  printf("ext force: (%f, %f, %f)\n", 
+    external_accelerations[0].x, external_accelerations[0].y,
+    external_accelerations[0].z);
+
+  printf("position: (%f, %f, %f)\n", point_masses[0].position.x, 
+    point_masses[0].position.y, point_masses[0].position.z);
+
+  printf("Force: (%f, %f, %f)\n", point_masses[0].forces.x, 
+    point_masses[0].forces.y, point_masses[0].forces.z);
+  */
   // Verlet integration to compute new point mass positions
   for (int i = 0; i < point_masses.size(); i++) {
     Vector3D old = point_masses[i].position;
@@ -68,7 +83,8 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       * (point_masses[i].position - point_masses[i].last_position)
       + point_masses[i].forces / mass * pow(delta_t, 2);
     point_masses[i].last_position = old;
-  }*/
+  }
+
 
   for (PointMass &pm : point_masses) {
     for (CollisionObject *co : *collision_objects) {

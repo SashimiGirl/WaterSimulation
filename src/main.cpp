@@ -10,6 +10,7 @@
 #include "CGL/CGL.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
+#include "collision/box.h"
 #include "water.h"
 #include "waterSimulator.h"
 #include "json.hpp"
@@ -319,25 +320,19 @@ int main(int argc, char **argv) {
   double radius = 0.05;
   double friction = 0.3;
 
-  Vector3D point = Vector3D(0, -1, 0);
+
+  Vector3D point = Vector3D(0, 0, 0);
   Vector3D normal = Vector3D(0, 1, 0);
   double p_friction = 0.5;
+  double size = 1.0;
+  double xshift = 0;
+  double yshift = 0;
+  double zshift = -0.5;
 
-  Plane *p = new Plane(point, normal, p_friction);
-  objects.push_back(p);
+  Box *b = new Box(point, normal, p_friction,
+    xshift, yshift, zshift, size);
+  objects.push_back(b);
 
-  Sphere *s = new Sphere(origin, radius, friction);
-      objects.push_back(s);
-  origin = Vector3D(0.55, 0.2, 0.5);
-  radius = 0.05;
-  friction = 0.3;
-    s = new Sphere(origin, radius, friction);
-    objects.push_back(s);
-/*
-      "origin": [0.5, 0.2, 0.5],
-    "radius": 0.2,
-    "friction": 0.3
-*/
   // Initialize the Cloth object
   water.buildVolume();
   water.buildSurfaceMesh();

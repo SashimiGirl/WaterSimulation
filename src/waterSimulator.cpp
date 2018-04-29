@@ -47,7 +47,7 @@ WaterSimulator::~WaterSimulator() {
 
 void WaterSimulator::loadWater(Water *water) { this->water = water; }
 
-void WaterSimulator::loadWaterParameters(WaterParameters *cp) { this->wp = wp; }
+void WaterSimulator::loadWaterParameters(WaterParameters *wp) { this->wp = wp; }
 
 void WaterSimulator::loadCollisionObjects(vector<CollisionObject *> *objects) { this->collision_objects = objects; }
 
@@ -111,7 +111,8 @@ void WaterSimulator::drawContents() {
     vector<Vector3D> external_accelerations = {gravity};
 
     for (int i = 0; i < simulation_steps; i++) {
-      water->simulate(frames_per_sec, simulation_steps, wp, external_accelerations, collision_objects);
+      water->simulate(frames_per_sec, simulation_steps, 
+        wp, external_accelerations, collision_objects);
     }
   }
 
