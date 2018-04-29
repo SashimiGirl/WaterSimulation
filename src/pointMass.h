@@ -1,28 +1,34 @@
 #ifndef POINTMASS_H
 #define POINTMASS_H
+#include <nanogui/nanogui.h>
+#include <glad/glad.h>
 
 #include "CGL/CGL.h"
 #include "CGL/misc.h"
 #include "CGL/vector3D.h"
 
 using namespace CGL;
+using namespace std;
+using namespace nanogui;
 
 // Forward declarations
 class Halfedge;
 
 struct PointMass {
-  PointMass(Vector3D position, bool pinned)
-      : pinned(pinned), start_position(position), position(position),
-        last_position(position) {}
+  PointMass(Vector3D pos, bool pinned) : start_position(pos), position(pos), radius(0.01), friction(0.2), last_position(pos) {}
 
+  void collide(PointMass &pm);
+  void render(GLShader &shader);
   Vector3D normal();
   Vector3D velocity(double delta_t) {
     return (position - last_position) / delta_t;
   }
 
   // static values
-  bool pinned;
   Vector3D start_position;
+  double radius;
+  bool pinned;
+  double friction;
 
   // dynamic values
   Vector3D position;

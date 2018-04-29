@@ -45,6 +45,7 @@ void Cloth::buildGrid() {
       }
     }
   }
+  /**
   for (int i = 0; i < pinned.size(); i++) {
     for (int j = 0; j < pinned[i].size(); j++) {
       point_masses[i * num_width_points + pinned[i][j]].pinned = true;
@@ -109,7 +110,7 @@ void Cloth::buildGrid() {
           break;
       }
     }
-  }
+  }*/
 }
 
 void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParameters *cp,

@@ -106,7 +106,7 @@ bool ClothSimulator::isAlive() { return is_alive; }
 void ClothSimulator::drawContents() {
   glEnable(GL_DEPTH_TEST);
 
-/*
+
   if (!is_paused) {
     vector<Vector3D> external_accelerations = {gravity};
 
@@ -114,7 +114,7 @@ void ClothSimulator::drawContents() {
       cloth->simulate(frames_per_sec, simulation_steps, cp, external_accelerations, collision_objects);
     }
   }
-*/
+
   // Bind the active shader
 
   GLShader shader = shaders[activeShader];
@@ -146,6 +146,9 @@ void ClothSimulator::drawContents() {
   }*/
   for (CollisionObject *co : *collision_objects) {
     co->render(shader);
+  }
+  for (PointMass pm : this->cloth->point_masses) {
+    pm.render(shader);
   }
 }
 

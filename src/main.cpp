@@ -349,10 +349,10 @@ void loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
 }
 
 int main(int argc, char **argv) {
-  //Cloth cloth;
-  //ClothParameters cp;
+  Cloth cloth;
+  ClothParameters cp;
   vector<CollisionObject *> objects;
-/*
+
   if (argc == 1) { // No arguments, default initialization
     string default_file_name = "../scene/sphere.json";
     loadObjectsFromFile(default_file_name, &cloth, &cp, &objects);
@@ -369,7 +369,7 @@ int main(int argc, char **argv) {
       }
     }
   }
-*/
+
   glfwSetErrorCallback(error_callback);
 
   createGLContexts();
@@ -397,13 +397,13 @@ int main(int argc, char **argv) {
     "friction": 0.3
 */
   // Initialize the Cloth object
-  //cloth.buildGrid();
-  //cloth.buildClothMesh();
+  cloth.buildGrid();
+  cloth.buildClothMesh();
 
   // Initialize the ClothSimulator object
   app = new ClothSimulator(screen);
-  //app->loadCloth(&cloth);
-//  app->loadClothParameters(&cp);
+  app->loadCloth(&cloth);
+  app->loadClothParameters(&cp);
   app->loadCollisionObjects(&objects);
   app->init();
 
@@ -427,25 +427,6 @@ int main(int argc, char **argv) {
     // Draw nanogui
     screen->drawContents();
     screen->drawWidgets();
-    GLfloat pointVertex[] = {screen->width / 2, 
-      screen->height / 2};
-    GLfloat pointVertex[] = {screen->width * 0.75, 
-      screen->height / 2};
-
-    glEnable(GL_POINT_SMOOTH);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glPointSize(50);
-    glVertexPointer(2, GL_FLOAT, 0, pointVertex);
-    glDrawArrays(GL_POINTS, 0, 1);
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisable(GL_POINT_SMOOTH);
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, pointVertex2);
-    glPointSize(10);
-    glDrawArrays(GL_POINTS, 0, 1);
-    glDisableClientState(GL_VERTEX_ARRAY);
-
 
     glfwSwapBuffers(window);
 
