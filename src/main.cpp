@@ -377,7 +377,7 @@ int main(int argc, char **argv) {
   double radius = 0.05;
   double friction = 0.3;
 
-  Vector3D point = Vector3D(0, 0, 0);
+  Vector3D point = Vector3D(0, -1, 0);
   Vector3D normal = Vector3D(0, 1, 0);
   double p_friction = 0.5;
 
