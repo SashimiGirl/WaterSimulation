@@ -45,23 +45,20 @@ void Water::buildVolume() {
 void Water::simulate(double frames_per_sec, double simulation_steps, WaterParameters *wp,
                      vector<Vector3D> external_accelerations,
                      vector<CollisionObject *> *collision_objects) {
-  //double mass = wp->density;
-  wp->damping = 0.2;
-  double mass = 0.001;
+  double mass = wp->density;
   double delta_t = 1.0f / frames_per_sec / simulation_steps;
   for (int i = 0; i < point_masses.size(); i++) {
     point_masses[i].forces = 0;
     for (int j = 0; j < external_accelerations.size(); j++) {
-      //point_masses[i].forces += 0.001 * external_accelerations[0];
       point_masses[i].forces += mass * external_accelerations[j];
     }
   }
 
-  /*
+  
   build_spatial_map();
   for (PointMass &pm : point_masses) {
     self_collide(pm, simulation_steps);
-  }*/
+  }
   /*
   printf("mass: %f\n", mass);
 
@@ -126,11 +123,11 @@ void Water::self_collide(PointMass &pm, double simulation_steps) {
   for (int i = 0; i < can->size(); i++) {
     float dist = (pm.position - (*can)[i]->position).norm();
     if (&pm != (*can)[i] &&  dist < 2 * PARTICLE_RADIUS) {
-      /* Add pressure stuffs.
-      Vector3D tangent = pm.position + (2 * thickness - dist)
+      // Add pressure stuffs.
+      Vector3D tangent = pm.position + (2 * PARTICLE_RADIUS - dist)
         * (pm.position - (*can)[i]->position) / dist;
       correction += tangent - pm.last_position;
-      correctNum++;*/
+      correctNum++;
     }
   }
   

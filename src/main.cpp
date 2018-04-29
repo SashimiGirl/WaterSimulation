@@ -324,8 +324,8 @@ int main(int argc, char **argv) {
   Vector3D point = Vector3D(0, 0, 0);
   Vector3D normal = Vector3D(0, 1, 0);
   double p_friction = 0.5;
-  double size = 1.0;
-  double xshift = 0;
+  double size = 1.5;
+  double xshift = -0.5;
   double yshift = 0;
   double zshift = -0.5;
 
