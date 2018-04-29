@@ -8,6 +8,11 @@
 #include <sstream>
 #include "Simulator.h"
 #include "LoadShader.cpp"
+=======
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+
+>>>>>>> dab236dffebda5fdb883dd3aaf31be9a846bc325
 #if OUTPUT_ANIMATION
 #include <opencv2/opencv.hpp>
 #endif
@@ -22,7 +27,11 @@ float phi = -M_PI/8+M_PI_2;
 float dist = 2.5;
 int width = 800;
 int height = 800;
+float zoom = 0.0f;
 int frame = 0;
+float rotationX = 0.0f;
+float rotationY = 0.0f;
+const int render_step = 3;
 int mx, my;
 
 
@@ -122,6 +131,31 @@ void glLookAt(double x, double y, double z, double dx, double dy, double dz, dou
     //glTranslated(-x - d * dx, -y - d * dy, -z - d * dz);
 }
 
+void keyboardFunc(GLFWwindow* win, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_UP:
+                rotationX += 5.0f;
+                break;
+            case GLFW_KEY_DOWN:
+                rotationX -= 5.0f;
+                break;
+            case GLFW_KEY_LEFT:
+                rotationY += 5.0f;
+                break;
+            case GLFW_KEY_RIGHT:
+                rotationY -= 5.0f;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void scrollFunc(GLFWwindow* win, double x, double y) {
+    zoom += 0.4f*y;
+}
+
 int main(int argc, char** argv)
 {
     GLFWwindow* window;
@@ -140,7 +174,10 @@ int main(int argc, char** argv)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-
+    glfwSetKeyCallback(window, keyboardFunc);
+    glfwSetScrollCallback(window, scrollFunc);
+    //glfwSetCursorPosCallback(window, mouseFunc);
+    //glfwSetMouseButtonCallback(window, clickFunc);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
     /* Loop until the user closes the window */
@@ -166,9 +203,19 @@ int main(int argc, char** argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
+        glMatrixMode(GL_PROJECTION);
+        //start
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glLookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.5);
+        glTranslatef(0.0f, 0.0f, zoom);
+        glRotatef(rotationX, 1.0f, 0.0f, 0.0f);
+        glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
         simulator->step();
+
         simulator->render();
-        
+
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
