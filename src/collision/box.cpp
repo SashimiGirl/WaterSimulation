@@ -9,10 +9,11 @@ using namespace std;
 using namespace CGL;
 
 #define SURFACE_OFFSET 0.0001
-
+/* For 1 plane
 void Box::collide(PointMass &pm) {
   // TODO (Part 3.2): Handle collisions with planes.
-  double t = dot((point - pm.last_position), normal) / dot((pm.position - pm.last_position).unit(), normal);
+  double t = dot((point - pm.last_position), normal) 
+  / dot((pm.position - pm.last_position).unit(), normal);
   if (t <= 0) {
     t = dot((point - pm.position), normal) / dot(normal, normal);
     if (t >= 0) {
@@ -21,6 +22,25 @@ void Box::collide(PointMass &pm) {
       //Vector3D correction = (tangent - pm.last_position) * (1 -SURFACE_OFFSET);
       pm.position = pm.last_position + (1 - friction) * correction;
     }
+  }
+}*/
+
+
+void Box::collide(PointMass &pm) {
+  // TODO (Part 3.2): Handle collisions with planes.
+  for (int i = 0; i < 5; i++) {
+    double t = dot((point[i] - pm.last_position), normal[i]) 
+  / dot((pm.position - pm.last_position).unit(), normal[i]);
+  if (t <= 0) {
+    t = dot((point[i] - pm.position), normal[i]) 
+    / dot(normal[i], normal[i]);
+    if (t >= 0) {
+      Vector3D tangent = pm.position + t * normal[i];
+      Vector3D correction = (tangent - pm.last_position) + SURFACE_OFFSET * normal[i];
+      //Vector3D correction = (tangent - pm.last_position) * (1 -SURFACE_OFFSET);
+      pm.position = pm.last_position + (1 - friction) * correction;
+    }
+  }
   }
 }
 
@@ -39,7 +59,7 @@ void Box::render(GLShader &shader) {
   MatrixXf positions(3, 4);
   MatrixXf normals(3, 4);
   Vector3f sNormal(0, 1, 0);
-
+  /*
   positions.col(0) << Vector3f(xshift + s, yshift, zshift);
   positions.col(1) << Vector3f(xshift + s, yshift, zshift + s);
   positions.col(2) << Vector3f(xshift, yshift, zshift);
@@ -59,7 +79,7 @@ void Box::render(GLShader &shader) {
   shader.uploadAttrib("in_normal", normals);
 
   shader.drawArray(GL_TRIANGLE_STRIP, 0, 4);
-
+*/
   // Left Plane
   sNormal = Vector3f(1, 0, 0);
 
@@ -131,6 +151,7 @@ void Box::render(GLShader &shader) {
   shader.drawArray(GL_TRIANGLE_STRIP, 0, 4);
 
   // Front Plane
+  /*
   sNormal = Vector3f(0, 0, 1);
 
   positions.col(0) << Vector3f(xshift, yshift, zshift + s);
@@ -153,5 +174,5 @@ void Box::render(GLShader &shader) {
   shader.uploadAttrib("in_normal", normals);
 
   shader.drawArray(GL_TRIANGLE_STRIP, 0, 4);
-
+*/
 }
