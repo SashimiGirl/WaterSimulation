@@ -56,31 +56,35 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
 
 
   build_spatial_map();
-  for (PointMass &pm : point_masses) {
+  for (auto &bucket : map) {
+    vector<PointMass*> bmasses = *(bucket.second);
     vector<PointMass*> candidates;
-    self_collide(pm, candidates);
+    self_collide((*bmasses[0]), candidates);
 
-    //int correctNum = 0;
-    //Vector3D correction = Vector3D(0,0,0);
-    double r1 = (double) rand() / (RAND_MAX)*0.001;
-    double r2 = (double) rand() / (RAND_MAX)*0.001;
-    double r3 = (double) rand() / (RAND_MAX)*0.001;
-    Vector3D pressure = Vector3D(r1,r2,r3);
-    for (int i = 0; i < candidates.size(); i++) {
-      Vector3D dist = pm.position - candidates[i]->position;
-      float distf = dist.norm() - 2 * PARTICLE_RADIUS;
-      if (&pm != candidates[i] && distf < 0) {
-        // Add pressure stuffs.
-        dist.normalize();
-        pressure += dist * wp->ks * distf;
-        /**
-        Vector3D tangent = pm.position + (2 * PARTICLE_RADIUS - dist)
-          * (pm.position - candidates[i]->position) / dist;
-        correction += tangent - pm.last_position;
-        correctNum++;**/
+    for (PointMass* pm : bmasses) {
+      float r1 = (float) rand() / (RAND_MAX)*0.0001;
+      float r2 = (float) rand() / (RAND_MAX)*0.0001;
+      float r3 = (float) rand() / (RAND_MAX)*0.0001;
+      Vector3D pressure = Vector3D(r1,r2,r3);
+      //Vector3D correction = Vector3D();
+      //int correctNum = 0;
+      for (int i = 0; i < candidates.size(); i++) {
+        Vector3D dist = candidates[i]->position - pm->position;
+        float distf = dist.norm() - 2 * PARTICLE_RADIUS;
+        if (pm != candidates[i] && distf < 0) {
+          // Add pressure stuffs.
+          dist.normalize();
+          pressure += dist * wp->ks * distf;
+          /**
+          if (distf < -PARTICLE_RADIUS) {
+            Vector3D tangent = pm->position - PARTICLE_RADIUS * dist;
+            correction += tangent - pm.last_position;
+            correctNum++;
+          }**/
+        }
       }
+      pm->forces += pressure;
     }
-    pm.forces += pressure;
   /**
     if (correctNum > 0) {
       correction = 1.0/(correctNum * simulation_steps) * correction;
@@ -109,7 +113,6 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       + p.forces / mass * pow(delta_t, 2);
     p.last_position = old;
   }
-
 
   for (PointMass &pm : point_masses) {
     for (CollisionObject *co : *collision_objects) {

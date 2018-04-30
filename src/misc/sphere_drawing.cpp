@@ -136,7 +136,7 @@ void draw_sphere(GLShader &shader, const Vector3D &p, double r) {
     vertices[3 * i + 2] = Vertices[8 * i + 7];
   }
 
-  glVertexPointer(3, GL_DOUBLE, 0, vertices);
+  glVertexAttribPointer(3, GL_DOUBLE, 0, vertices);
   glNormalPointer(GL_DOUBLE, 0, normals);
   glDrawElements(GL_TRIANGLES, SPHERE_NUM_INDICES, GL_UNSIGNED_INT, Indices);
   */
