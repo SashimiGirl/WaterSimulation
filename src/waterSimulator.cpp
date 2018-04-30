@@ -111,7 +111,7 @@ void WaterSimulator::drawContents() {
     vector<Vector3D> external_accelerations = {gravity};
 
     for (int i = 0; i < simulation_steps; i++) {
-      water->simulate(frames_per_sec, simulation_steps, 
+      water->simulate(frames_per_sec, simulation_steps,
         wp, external_accelerations, collision_objects);
     }
   }
@@ -537,12 +537,12 @@ void WaterSimulator::initGUI(Screen *screen) {
         new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
 
     Slider *slider = new Slider(panel);
-    //slider->setValue(cp->damping);
+    slider->setValue(wp->damping);
     slider->setFixedWidth(105);
 
     TextBox *percentage = new TextBox(panel);
     percentage->setFixedWidth(75);
-    //percentage->setValue(to_string(cp->damping));
+    percentage->setValue(to_string(wp->damping));
     percentage->setUnits("%");
     percentage->setFontSize(14);
 
@@ -550,7 +550,7 @@ void WaterSimulator::initGUI(Screen *screen) {
       percentage->setValue(std::to_string(value));
     });
     slider->setFinalCallback([&](float value) {
-      //cp->damping = (double)value;
+      wp->damping = (double)value;
       // cout << "Final slider value: " << (int)(value * 100) << endl;
     });
   }

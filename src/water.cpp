@@ -62,12 +62,13 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     self_collide((*bmasses[0]), candidates);
 
     for (PointMass* pm : bmasses) {
-      float r1 = (float) rand() / (RAND_MAX)*0.0001;
-      float r2 = (float) rand() / (RAND_MAX)*0.0001;
-      float r3 = (float) rand() / (RAND_MAX)*0.0001;
+      float r1 = (float) rand() / (RAND_MAX)*0.01;
+      float r2 = (float) rand() / (RAND_MAX)*0.01;
+      float r3 = (float) rand() / (RAND_MAX)*0.01;
       Vector3D pressure = Vector3D(r1,r2,r3);
       //Vector3D correction = Vector3D();
       //int correctNum = 0;
+      vector<PointMass*> close;
       for (int i = 0; i < candidates.size(); i++) {
         Vector3D dist = candidates[i]->position - pm->position;
         float distf = dist.norm() - 2 * PARTICLE_RADIUS;
@@ -75,14 +76,20 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
           // Add pressure stuffs.
           dist.normalize();
           pressure += dist * wp->ks * distf;
-          /**
-          if (distf < -PARTICLE_RADIUS) {
-            Vector3D tangent = pm->position - PARTICLE_RADIUS * dist;
-            correction += tangent - pm.last_position;
-            correctNum++;
-          }**/
+        }
+        else if (pm != candidates[i] && distf < PARTICLE_RADIUS) {
+          close.push_back(candidates[i]);
         }
       }
+      for (int i=0; close.size() > 0 && i < 4; i++) {
+        int hbond = (float) rand() / (RAND_MAX) * close.size();
+        Vector3D dist = close[hbond]->position - pm->position;
+        float distf = dist.norm();
+        dist.normalize();
+        pressure += dist * 0.005 / (distf * distf);
+        //cout << distf;
+      }
+
       pm->forces += pressure;
     }
   /**

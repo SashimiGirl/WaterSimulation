@@ -6,6 +6,6 @@
     "viscosity" : 0.1,
     "num_length_points": 10,
     "num_width_points": 10,
-    "num_height_points": 10
+    "num_height_points": 30
   }
 }
