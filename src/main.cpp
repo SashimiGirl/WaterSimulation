@@ -170,7 +170,7 @@ void loadObjectsFromFile(string filename, Water *water, WaterParameters *wp, vec
     if (key == WATER) {
       // Water
       int num_length_points, num_width_points, num_height_points;
-      
+
       auto it_num_length_points = object.find("num_length_points");
       if (it_num_length_points != object.end()) {
         num_length_points = *it_num_length_points;

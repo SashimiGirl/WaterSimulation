@@ -54,32 +54,60 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     }
   }
 
-  
+
   build_spatial_map();
   for (PointMass &pm : point_masses) {
-    self_collide(pm, simulation_steps);
+    vector<PointMass*> candidates;
+    self_collide(pm, candidates);
+
+    //int correctNum = 0;
+    //Vector3D correction = Vector3D(0,0,0);
+    double r1 = (double) rand() / (RAND_MAX)*0.001;
+    double r2 = (double) rand() / (RAND_MAX)*0.001;
+    double r3 = (double) rand() / (RAND_MAX)*0.001;
+    Vector3D pressure = Vector3D(r1,r2,r3);
+    for (int i = 0; i < candidates.size(); i++) {
+      Vector3D dist = pm.position - candidates[i]->position;
+      float distf = dist.norm() - 2 * PARTICLE_RADIUS;
+      if (&pm != candidates[i] && distf < 0) {
+        // Add pressure stuffs.
+        dist.normalize();
+        pressure += dist * wp->ks * distf;
+        /**
+        Vector3D tangent = pm.position + (2 * PARTICLE_RADIUS - dist)
+          * (pm.position - candidates[i]->position) / dist;
+        correction += tangent - pm.last_position;
+        correctNum++;**/
+      }
+    }
+    pm.forces += pressure;
+  /**
+    if (correctNum > 0) {
+      correction = 1.0/(correctNum * simulation_steps) * correction;
+      pm.position = pm.last_position + correction ;
+    }**/
   }
   /*
   printf("mass: %f\n", mass);
 
-  printf("ext force: (%f, %f, %f)\n", 
+  printf("ext force: (%f, %f, %f)\n",
     external_accelerations[0].x, external_accelerations[0].y,
     external_accelerations[0].z);
 
-  printf("position: (%f, %f, %f)\n", point_masses[0].position.x, 
+  printf("position: (%f, %f, %f)\n", point_masses[0].position.x,
     point_masses[0].position.y, point_masses[0].position.z);
 
-  printf("Force: (%f, %f, %f)\n", point_masses[0].forces.x, 
+  printf("Force: (%f, %f, %f)\n", point_masses[0].forces.x,
     point_masses[0].forces.y, point_masses[0].forces.z);
   */
   // Verlet integration to compute new point mass positions
-  for (int i = 0; i < point_masses.size(); i++) {
-    Vector3D old = point_masses[i].position;
-    point_masses[i].position = point_masses[i].position
-      + (1 - (wp->damping / 100)) 
-      * (point_masses[i].position - point_masses[i].last_position)
-      + point_masses[i].forces / mass * pow(delta_t, 2);
-    point_masses[i].last_position = old;
+  for (PointMass &p : point_masses) {
+    Vector3D old = p.position;
+    p.position = p.position
+      + (1 - (wp->damping / 100))
+      * (p.position - p.last_position)
+      + p.forces / mass * pow(delta_t, 2);
+    p.last_position = old;
   }
 
 
@@ -98,53 +126,45 @@ void Water::build_spatial_map() {
     delete(entry.second);
   }
   map.clear();
-
-  for (int i = 0; i < point_masses.size(); i++) {
-    float code = hash_position(point_masses[i].position);
+  for (PointMass& p : point_masses) {
+    uint64_t code = hash_position(p.position);
     if (map.find(code) == map.end()) {
       vector<PointMass *> *temp =  new vector<PointMass *>();
-      temp->emplace_back(&point_masses[i]);
+      temp->emplace_back(&p);
       map[code] = temp;
     } else {
       vector<PointMass *> *temp =  map[code];
-      temp->emplace_back(&point_masses[i]);
+      temp->emplace_back(&p);
     }
   }
 
 }
 
-void Water::self_collide(PointMass &pm, double simulation_steps) {
-  // TODO (Part 4.3): Handle self-collision for a given point mass.
-  float code = hash_position(pm.position);
-  vector<PointMass *> *can = (map.find(code)->second);
-  
-  int correctNum = 0;
-  Vector3D correction = Vector3D(0,0,0);
-  for (int i = 0; i < can->size(); i++) {
-    float dist = (pm.position - (*can)[i]->position).norm();
-    if (&pm != (*can)[i] &&  dist < 2 * PARTICLE_RADIUS) {
-      // Add pressure stuffs.
-      Vector3D tangent = pm.position + (2 * PARTICLE_RADIUS - dist)
-        * (pm.position - (*can)[i]->position) / dist;
-      correction += tangent - pm.last_position;
-      correctNum++;
+void Water::self_collide(PointMass &pm, vector<PointMass *> &candidates) {
+  uint64_t code = hash_position(pm.position);
+  uint64_t offsets[4] = { 0x000000000001, 0x000000010000, 0x000100000000, 0x000100010001};
+  code = code - offsets[3];
+
+  int n, m, p;
+  for (int i = 0; i < 27; i++) {
+    n = i%3;
+    m = i%9/3;
+    p = i/9;
+    auto tmp = map.find(code + n * offsets[0]+ m * offsets[1] + p * offsets[2]);
+    if (tmp != map.end()) {
+      candidates.insert(candidates.end(), tmp->second->begin(), tmp->second->end());
     }
-  }
-  
-  if (correctNum > 0) {
-    correction = 1.0/(correctNum * simulation_steps) * correction;
-    pm.position = pm.last_position + correction ;
   }
 }
 
-float Water::hash_position(Vector3D pos) {
+uint64_t Water::hash_position(Vector3D pos) {
   // TODO (Part 4.1): Hash a 3D position into a unique float identifier that represents
   // membership in some uniquely identified 3D box volume.
-  float t = 5 * PARTICLE_RADIUS;
-  Vector3D bucket = Vector3D((int) floor(pos.x/t), (int) floor(pos.y/t), 
-    (int) floor(pos.z/t));
-
-  return (bucket.x * 31 + bucket.y) * 31 + bucket.z;
+  float t = 3 * PARTICLE_RADIUS;
+  uint64_t result = (uint16_t) (floor(pos.x/t) + 32768);
+  result = (result << 16) | (uint16_t) (floor(pos.x/t) + 32768);
+  result = (result << 16) | (uint16_t) (floor(pos.x/t) + 32768);
+  return result;
 }
 
 void Water::reset() {

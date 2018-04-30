@@ -43,8 +43,8 @@ struct Water {
 
   void build_spatial_map();
   void buildSurfaceMesh();
-  void self_collide(PointMass &pm, double simulation_steps);
-  float hash_position(Vector3D pos);
+  void self_collide(PointMass &pm, vector<PointMass *> &candidates);
+  uint64_t hash_position(Vector3D pos);
 
   // Water properties
   int num_length_points;
@@ -56,7 +56,7 @@ struct Water {
   ClothMesh *surfaceMesh;
 
   // Spatial hashing
-  unordered_map<float, vector<PointMass *> *> map;
+  unordered_map<uint64_t, vector<PointMass *> *> map;
 };
 
 #endif /* WATER_H */
