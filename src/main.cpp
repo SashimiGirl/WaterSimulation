@@ -230,7 +230,7 @@ void loadObjectsFromFile(string filename, Water *water, WaterParameters *wp, vec
       wp->ks = ks;
     } else if (key == SPHERE) {
       Vector3D origin;
-      double radius, friction;
+      double radius, friction, elasticity;
 
       auto it_origin = object.find("origin");
       if (it_origin != object.end()) {
@@ -254,7 +254,14 @@ void loadObjectsFromFile(string filename, Water *water, WaterParameters *wp, vec
         incompleteObjectError("sphere", "friction");
       }
 
-      Sphere *s = new Sphere(origin, radius, friction);
+      auto it_elasticity = object.find("elasticity");
+      if (it_elasticity != object.end()) {
+        elasticity = *it_elasticity;
+      } else {
+        incompleteObjectError("sphere", "elasticity");
+      }
+
+      Sphere *s = new Sphere(origin, radius, friction, elasticity);
       objects->push_back(s);
     } else { // PLANE
       Vector3D point, normal;
@@ -298,8 +305,8 @@ int main(int argc, char **argv) {
 
   // Creates object for the surrounding box
   // So no forces are applied to the box
-  double p_friction = 0.2;
-  double elasticity = 0.4;
+  double p_friction = 0.1;
+  double elasticity = 0.3;
   double size = 1.5;
   double xshift = -0.5;
   double yshift = 0;
@@ -347,7 +354,6 @@ int main(int argc, char **argv) {
   // Attach callbacks to the GLFW window
 
   setGLFWCallbacks();
-  glEnable(GL_DEPTH_TEST);
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
 

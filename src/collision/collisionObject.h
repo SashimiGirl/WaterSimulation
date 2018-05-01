@@ -28,6 +28,8 @@ public:
 
   // static values
   double mass;
+  Vector3D velocity;
+  double elasticity;
   double density;
   Vector3D start_position;
   double radius;

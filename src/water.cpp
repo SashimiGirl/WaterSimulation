@@ -7,6 +7,7 @@
 #include "collision/sphere.h"
 
 #define PARTICLE_RADIUS 0.01
+#define TARGET_PRESSURE 2 * PARTICLE_RADIUS
 
 using namespace std;
 
@@ -34,7 +35,7 @@ void Water::buildVolume() {
       for (int j = 0; j < num_width_points; j++) {
         point_masses.emplace_back(
             Vector3D(2 * PARTICLE_RADIUS * j, 2 * PARTICLE_RADIUS * i + 1.0, 2 * PARTICLE_RADIUS * k),
-            PARTICLE_RADIUS);
+            PARTICLE_RADIUS, k * num_width_points * num_height_points + i * num_width_points + j);
       }
     }
   }
@@ -54,6 +55,8 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   Vector3D waterf = mass * ef;
   for (PointMass &p : point_masses) {
     p.forces = waterf;
+    p.mass = mass;
+    //p.last_position = p.position;
   }
   // Applying external forces (gravity) to objects
   for (auto co : *collision_objects) {
@@ -65,6 +68,55 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   for (auto &bucket : map) {
     bs.push_back(bucket.second);
   }
+/**
+  #pragma omp parallel for
+  for (auto iter = bs.begin(); iter < bs.end(); iter++) {
+    vector<PointMass*> bmasses = *(iter[0]);
+    vector<PointMass*> candidates;
+    self_collide((*bmasses[0]), candidates);
+    for (PointMass* pm : bmasses) {
+      float pressure = 0.0;
+      for (PointMass* c : candidates) {
+        Vector3D dist = pm->last_position- c->last_position;
+
+        float distf = dist.norm() - TARGET_PRESSURE;
+        if (pm != c && distf < PARTICLE_RADIUS) {
+          // Add pressure stuffs.
+          pressure +=  distf / TARGET_PRESSURE;//SPkernel(dist, 0.8, 15)
+        }
+      }
+      this->pressures[pm->hash] = pressure;
+    }
+  }
+
+
+  for (PointMass &p : point_masses) {
+    vector<PointMass*> candidates;
+    vector<PointMass*> neighbors;
+    Vector3D correction;
+    float pressure = 0.0;
+    p.position = p.last_position + p.velocity * delta_t + 0.5 * p.forces / mass * delta_t * delta_t;
+    hash_collide(hash_position(p.position), candidates);
+    for (PointMass* c : candidates) {
+      Vector3D dist = c->last_position - p.position;
+
+      float distf = dist.norm() - TARGET_PRESSURE;
+      if (p.hash != c->hash && distf < PARTICLE_RADIUS) {
+        neighbors.push_back(c);
+        pressure += distf / TARGET_PRESSURE;
+      }
+    }
+    for (PointMass* n : neighbors) {
+      Vector3D duck = p.position - n->position;
+      duck.normalize();
+      correction +=  0.05 * (this->pressures[n->hash] - pressure) * duck;
+      //dSPkernel((pressure - this->pressures[n->hash]), 0.1, 15) *
+    }
+    p.position += correction;
+    p.velocity = (p.position - p.last_position) / delta_t;
+  }**/
+
+
   #pragma omp parallel for
   for (auto iter = bs.begin(); iter < bs.end(); iter++) {
     vector<PointMass*> bmasses = *(iter[0]);
@@ -80,17 +132,33 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       //Vector3D pressure = Vector3D();
       //Vector3D correction = Vector3D();
       //int correctNum = 0;
+      Vector3D correction = Vector3D();
+      int num = 0;
+      for (PointMass* c : candidates) {
+        Vector3D dir = c->position - pm->position;
+        if (c != pm && dir.norm2() < PARTICLE_RADIUS * PARTICLE_RADIUS) {
+          dir.normalize();
+          num += 1;
+          Vector3D tmp = c->position - dir * PARTICLE_RADIUS;
+          correction += tmp - pm->position;
+        }
+      }
+      if (num > 0) {
+        pm->position += correction / (num * simulation_steps);
+      }
+
       vector<PointMass*> close;
-      for (int i = 0; i < candidates.size(); i++) {
-        Vector3D dist = candidates[i]->position - pm->position;
+      for (PointMass* c : candidates) {
+        Vector3D dist = c->position - pm->position;
+
         float distf = dist.norm() - 2 * PARTICLE_RADIUS;
-        if (pm != candidates[i] && distf < 0) {
+        if (pm != c && distf < 0) {
           // Add pressure stuffs.
           dist.normalize();
           pressure += dist * wp->ks * distf;
         }
-        else if (pm != candidates[i] && distf < PARTICLE_RADIUS) {
-          close.push_back(candidates[i]);
+        else if (pm != c && distf < PARTICLE_RADIUS) {
+          close.push_back(c);
         }
       }
       for (int i=0; close.size() > 0 && i < 4; i++) {
@@ -105,36 +173,43 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       pm->forces += pressure;
     }
   }
+  // Verlet integration to compute new object positions
+  for (int i = 0; i < collision_objects->size(); i++) {
+      Vector3D old = (*collision_objects)[i]->position;
+      (*collision_objects)[i]->position = (*collision_objects)[i]->position
+        + (1 - (wp->damping / 100))
+        * ((*collision_objects)[i]->velocity) * delta_t
+        + 0.5 * (*collision_objects)[i]->forces / (*collision_objects)[i]->mass * delta_t * delta_t;
+      (*collision_objects)[i]->last_position = old;
+    // Check if object hit the box
+      (*collision_objects)[i]->velocity = (*collision_objects)[i]->forces / (*collision_objects)[i]->mass * delta_t;
+      container->collide(*((*collision_objects)[i]));
+  }
+
 
   // Verlet integration to compute new point mass positions
-  for (PointMass &p : point_masses) {
+  #pragma omp parallel for
+  for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
+    PointMass &p = iter[0];
+
     Vector3D old = p.position;
     p.position = p.position
       + (1 - (wp->damping / 100))
       * (p.position - p.last_position)
       + p.forces / mass * pow(delta_t, 2);
     p.last_position = old;
-  }
-
-  // Verlet integration to compute new object positions
-  for (int i = 0; i < collision_objects->size(); i++) {
-      Vector3D old = (*collision_objects)[i]->position;
-      (*collision_objects)[i]->position = (*collision_objects)[i]->position
-        + (1 - (wp->damping / 100))
-        * ((*collision_objects)[i]->position - (*collision_objects)[i]->last_position)
-        + (*collision_objects)[i]->forces / (*collision_objects)[i]->mass * pow(delta_t, 2);
-      (*collision_objects)[i]->last_position = old;
-    // Check if object hit the box
-    container->collide(*((*collision_objects)[i]));
+    p.velocity = (p.position - p.last_position) / delta_t;
+    for (CollisionObject *co : *collision_objects) {
+      co->collide(p);
+    }
+    container->collide(p);
   }
 
   // Applying collisions to each point mass to object
-  for (PointMass &pm : point_masses) {
-    for (CollisionObject *co : *collision_objects) {
-      co->collide(pm);
-    }
-    container->collide(pm);
-  }
+  // #pragma omp parallel for
+  // for (iter = point_masses.begin(); iter < point_masses.end(); iter++) {
+  //
+  // }
 }
 
 void Water::build_spatial_map() {
@@ -174,6 +249,31 @@ void Water::self_collide(PointMass &pm, vector<PointMass *> &candidates) {
   }
 }
 
+void Water::hash_collide(uint64_t hash, vector<PointMass *> &candidates) {
+  uint64_t offsets[4] = { 0x000000000001, 0x000000010000, 0x000100000000, 0x000100010001};
+  hash = hash - offsets[3];
+
+  int n, m, p;
+  for (int i = 0; i < 27; i++) {
+    n = i%3;
+    m = i%9/3;
+    p = i/9;
+    auto tmp = map.find(hash + n * offsets[0]+ m * offsets[1] + p * offsets[2]);
+    if (tmp != map.end()) {
+      candidates.insert(candidates.end(), tmp->second->begin(), tmp->second->end());
+    }
+  }
+}
+float Water::SPkernel(Vector3D in, float var, float scalar) {
+  float tmp = var - in.norm();
+  return scalar / (M_PI * pow(var, 6)) * tmp * tmp * tmp;
+}
+Vector3D Water::dSPkernel(Vector3D in, float var, float scalar) {
+  float tmp = var - in.norm();
+  in.normalize();
+  return 3 * scalar / (M_PI * pow(var, 6)) * tmp * tmp * in;
+}
+
 uint64_t Water::hash_position(Vector3D pos) {
   // TODO (Part 4.1): Hash a 3D position into a unique float identifier that represents
   // membership in some uniquely identified 3D box volume.
@@ -189,6 +289,7 @@ void Water::reset(vector<CollisionObject *> *collision_objects) {
   for (int i = 0; i < point_masses.size(); i++) {
     pm->position = pm->start_position;
     pm->last_position = pm->start_position;
+    pm->velocity = Vector3D();
     pm++;
   }
   for (int i = 0; i < collision_objects->size(); i++) {
@@ -196,6 +297,7 @@ void Water::reset(vector<CollisionObject *> *collision_objects) {
         (*collision_objects)[i]->start_position;
     (*collision_objects)[i]->position =
         (*collision_objects)[i]->start_position;
+    (*collision_objects)[i]->velocity = Vector3D();
   }
 }
 

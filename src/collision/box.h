@@ -16,7 +16,7 @@ struct Box : public CollisionObject {
 public:
   Box(double friction, double elasticity, double xshift, double yshift,
     double zshift, double s)
-      : friction(friction), elasticity(elasticity), xshift(xshift), yshift(yshift),
+      : friction(friction), xshift(xshift), yshift(yshift),
       zshift(zshift), s(s), CollisionObject(100.0) {
 
       	point.emplace_back(Vector3D(xshift, yshift, zshift)); // Bottom
@@ -30,6 +30,7 @@ public:
       	normal.emplace_back(Vector3D(-1, 0, 0)); // Right
       	normal.emplace_back(Vector3D(0, 0, 1)); // Back
       	normal.emplace_back(Vector3D(0, 0, -1)); // Front
+        this->elasticity = elasticity;
       }
 
   void render(GLShader &shader);
@@ -40,7 +41,6 @@ public:
   vector<Vector3D> normal;
 
   double friction;
-  double elasticity;
   double xshift;
   double yshift;
   double zshift;

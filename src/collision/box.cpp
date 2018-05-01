@@ -31,8 +31,7 @@ void Box::collide(CollisionObject &s) {
   for (int i = 0; i < 5; i++) {
     double t = dot((s.position - point[i]), normal[i]);
     if (t <= s.radius) {
-      t = dot((point[i] - s.position), normal[i])
-        / dot(normal[i], normal[i]);
+      t = dot((point[i] - s.position), normal[i]);
       Vector3D tangent = s.position + t * normal[i];
       // Little bounce?
       s.last_position = s.position;

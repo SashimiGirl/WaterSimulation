@@ -27,8 +27,8 @@ WaterSimulator::WaterSimulator(Screen *screen) {
   phongShader.initFromFiles("Phong", "../shaders/camera.vert",
                             "../shaders/phong.frag");
 
-  shaders.push_back(wireframeShader);
   shaders.push_back(normalShader);
+  shaders.push_back(wireframeShader);
   shaders.push_back(phongShader);
 
   glEnable(GL_PROGRAM_POINT_SIZE);
@@ -107,6 +107,7 @@ void WaterSimulator::init() {
 bool WaterSimulator::isAlive() { return is_alive; }
 
 void WaterSimulator::drawContents() {
+  glEnable(GL_DEPTH_TEST);
 
   if (!is_paused) {
     vector<Vector3D> external_accelerations = {gravity};
@@ -611,7 +612,7 @@ void WaterSimulator::initGUI(Screen *screen) {
   new Label(window, "Appearance", "sans-bold");
 
   {
-    ComboBox *cb = new ComboBox(window, {"Wireframe", "Normals", "Shaded"});
+    ComboBox *cb = new ComboBox(window, {"Normals", "Wireframe", "Shaded"});
     cb->setFontSize(14);
     cb->setCallback(
         [this, screen](int idx) { activeShader = static_cast<e_shader>(idx); });

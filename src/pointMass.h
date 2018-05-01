@@ -15,24 +15,27 @@ using namespace nanogui;
 class Halfedge;
 
 struct PointMass {
-  PointMass(Vector3D pos, double radius) : start_position(pos), position(pos), radius(radius), friction(0.2), last_position(pos) {}
+  PointMass(Vector3D pos, double radius, int hash) : start_position(pos), position(pos), radius(radius), hash(hash), friction(0.2), last_position(pos) {}
 
   void collide(PointMass &pm);
   void render(GLShader &shader);
   Vector3D normal();
-  Vector3D velocity(double delta_t) {
-    return (position - last_position) / delta_t;
-  }
+  // Vector3D velocity(double delta_t) {
+  //   return (position - last_position) / delta_t;
+  // }
 
   // static values
   Vector3D start_position;
   double radius;
   double friction;
+  int hash;
+  double mass;
 
   // dynamic values
   Vector3D position;
   Vector3D last_position;
   Vector3D forces;
+  Vector3D velocity;
 
   // mesh reference
   Halfedge *halfedge;
