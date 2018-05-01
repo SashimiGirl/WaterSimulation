@@ -9,38 +9,48 @@ using namespace std;
 using namespace CGL;
 
 #define SURFACE_OFFSET 0.0001
-/* For 1 plane
+
 void Box::collide(PointMass &pm) {
-  // TODO (Part 3.2): Handle collisions with planes.
-  double t = dot((point - pm.last_position), normal) 
-  / dot((pm.position - pm.last_position).unit(), normal);
-  if (t <= 0) {
-    t = dot((point - pm.position), normal) / dot(normal, normal);
-    if (t >= 0) {
-      Vector3D tangent = pm.position + t * normal;
-      Vector3D correction = (tangent - pm.last_position) + SURFACE_OFFSET * normal;
-      //Vector3D correction = (tangent - pm.last_position) * (1 -SURFACE_OFFSET);
-      pm.position = pm.last_position + (1 - friction) * correction;
+  // Handle collisions with box like sphere objects
+  for (int i = 0; i < 5; i++) {
+    double t = dot((pm.position - point[i]), normal[i]);
+    if (t <= pm.radius) {
+      t = dot((point[i] - pm.position), normal[i]) 
+        / dot(normal[i], normal[i]);
+      Vector3D tangent = pm.position + t * normal[i];
+      // Little bounce?
+      pm.last_position = pm.position;
+      pm.position = tangent + normal[i] * pm.radius;
     }
   }
-}*/
-
-
-void Box::collide(PointMass &pm) {
-  // TODO (Part 3.2): Handle collisions with planes.
+  /* Normal collisions with box
   for (int i = 0; i < 5; i++) {
     double t = dot((point[i] - pm.last_position), normal[i]) 
-  / dot((pm.position - pm.last_position).unit(), normal[i]);
-  if (t <= 0) {
-    t = dot((point[i] - pm.position), normal[i]) 
-    / dot(normal[i], normal[i]);
-    if (t >= 0) {
-      Vector3D tangent = pm.position + t * normal[i];
-      Vector3D correction = (tangent - pm.last_position) + SURFACE_OFFSET * normal[i];
-      //Vector3D correction = (tangent - pm.last_position) * (1 -SURFACE_OFFSET);
-      pm.position = pm.last_position + (1 - friction) * correction;
+      / dot((pm.position - pm.last_position).unit(), normal[i]);
+    if (t <= 0) {
+      t = dot((point[i] - pm.position), normal[i]) 
+        / dot(normal[i], normal[i]);
+      if (t >= 0) {
+        Vector3D tangent = pm.position + t * normal[i];
+        Vector3D correction = (tangent - pm.last_position) + SURFACE_OFFSET * normal[i];
+        pm.position = pm.last_position + (1 - friction) * correction;
+      }
     }
-  }
+  }*/
+}
+
+void Box::collide(CollisionObject &s) {
+  // Handle sphere collisions with the box.
+  for (int i = 0; i < 5; i++) {
+    double t = dot((s.position - point[i]), normal[i]);
+    if (t <= s.radius) {
+      t = dot((point[i] - s.position), normal[i]) 
+        / dot(normal[i], normal[i]);
+      Vector3D tangent = s.position + t * normal[i];
+      // Little bounce?
+      s.last_position = s.position;
+      s.position = tangent + normal[i] * s.radius;
+    }
   }
 }
 
@@ -59,7 +69,7 @@ void Box::render(GLShader &shader) {
   MatrixXf positions(3, 4);
   MatrixXf normals(3, 4);
   Vector3f sNormal(0, 1, 0);
-  /*
+  
   positions.col(0) << Vector3f(xshift + s, yshift, zshift);
   positions.col(1) << Vector3f(xshift + s, yshift, zshift + s);
   positions.col(2) << Vector3f(xshift, yshift, zshift);
@@ -79,7 +89,7 @@ void Box::render(GLShader &shader) {
   shader.uploadAttrib("in_normal", normals);
 
   shader.drawArray(GL_TRIANGLE_STRIP, 0, 4);
-*/
+
   // Left Plane
   sNormal = Vector3f(1, 0, 0);
 
@@ -151,7 +161,7 @@ void Box::render(GLShader &shader) {
   shader.drawArray(GL_TRIANGLE_STRIP, 0, 4);
 
   // Front Plane
-  /*
+  /* Commented out so that we can see in the box...
   sNormal = Vector3f(0, 0, 1);
 
   positions.col(0) << Vector3f(xshift, yshift, zshift + s);

@@ -296,6 +296,16 @@ int main(int argc, char **argv) {
   WaterParameters wp;
   vector<CollisionObject *> objects;
 
+  // Creates object for the surrounding box
+  // So no forces are applied to the box
+  double p_friction = 0.5;
+  double size = 1.5;
+  double xshift = -0.5;
+  double yshift = 0;
+  double zshift = -0.5;
+  Box *container = new Box(p_friction, xshift, yshift, 
+    zshift, size);
+
   if (argc == 1) { // No arguments, default initialization
     string default_file_name = "../scene/sphere.json";
     loadObjectsFromFile(default_file_name, &water, &wp, &objects);
@@ -316,22 +326,6 @@ int main(int argc, char **argv) {
   glfwSetErrorCallback(error_callback);
 
   createGLContexts();
-  Vector3D origin = Vector3D(0.5, 0.2, 0.5);
-  double radius = 0.05;
-  double friction = 0.3;
-
-
-  Vector3D point = Vector3D(0, 0, 0);
-  Vector3D normal = Vector3D(0, 1, 0);
-  double p_friction = 0.5;
-  double size = 1.5;
-  double xshift = -0.5;
-  double yshift = 0;
-  double zshift = -0.5;
-
-  Box *b = new Box(point, normal, p_friction,
-    xshift, yshift, zshift, size);
-  objects.push_back(b);
 
   // Initialize the Cloth object
   water.buildVolume();
@@ -341,7 +335,7 @@ int main(int argc, char **argv) {
   app = new WaterSimulator(screen);
   app->loadWater(&water);
   app->loadWaterParameters(&wp);
-  app->loadCollisionObjects(&objects);
+  app->loadCollisionObjects(&objects, container);
   app->init();
 
   // Call this after all the widgets have been defined

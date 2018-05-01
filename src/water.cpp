@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "water.h"
-#include "collision/plane.h"
 #include "collision/sphere.h"
 
 #define PARTICLE_RADIUS 0.01
@@ -44,7 +43,8 @@ void Water::buildVolume() {
 
 void Water::simulate(double frames_per_sec, double simulation_steps, WaterParameters *wp,
                      vector<Vector3D> external_accelerations,
-                     vector<CollisionObject *> *collision_objects) {
+                     vector<CollisionObject *> *collision_objects,
+                     Box *container) {
   double mass = wp->density;
   double delta_t = 1.0f / frames_per_sec / simulation_steps;
   Vector3D ef = Vector3D();
@@ -108,14 +108,33 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     p.last_position = old;
   }
 
+  // Applying external forces (gravity) to objects
+  for (int i = 0; i < collision_objects->size(); i++) {
+      (*collision_objects)[i]->forces = 0;
+      for (int j = 0; j < external_accelerations.size(); j++) {
+        (*collision_objects)[i]->forces += (*collision_objects)[i]->mass * external_accelerations[j];
+    }
+  }
+  
+  // Verlet integration to compute new object positions
+  for (int i = 0; i < collision_objects->size(); i++) {
+      Vector3D old = (*collision_objects)[i]->position;
+      (*collision_objects)[i]->position = (*collision_objects)[i]->position
+        + (1 - (wp->damping / 100))
+        * ((*collision_objects)[i]->position - (*collision_objects)[i]->last_position)
+        + (*collision_objects)[i]->forces / (*collision_objects)[i]->mass * pow(delta_t, 2);
+      (*collision_objects)[i]->last_position = old;
+    // Check if object hit the box
+    container->collide(*((*collision_objects)[i]));
+  }
+
+  // Applying collisions to each point mass to object
   for (PointMass &pm : point_masses) {
     for (CollisionObject *co : *collision_objects) {
       co->collide(pm);
     }
+    container->collide(pm);
   }
-
-  // TODO (Part 2.3): Constrain the changes to be such that the water particles do not change
-  // in pos more than <simething> per timestep.
 }
 
 void Water::build_spatial_map() {
@@ -164,14 +183,21 @@ uint64_t Water::hash_position(Vector3D pos) {
   return result;
 }
 
-void Water::reset() {
+void Water::reset(vector<CollisionObject *> *collision_objects) {
   PointMass *pm = &point_masses[0];
   for (int i = 0; i < point_masses.size(); i++) {
     pm->position = pm->start_position;
     pm->last_position = pm->start_position;
     pm++;
   }
+  for (int i = 0; i < collision_objects->size(); i++) {
+    (*collision_objects)[i]->last_position = 
+        (*collision_objects)[i]->start_position;
+    (*collision_objects)[i]->position = 
+        (*collision_objects)[i]->start_position;
+  }
 }
+
 
 void Water::buildSurfaceMesh() { //FIXME:Not ready
   if (point_masses.size() == 0) return;
