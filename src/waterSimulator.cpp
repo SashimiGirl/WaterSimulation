@@ -432,7 +432,7 @@ void WaterSimulator::initGUI(Screen *screen) {
 
   // Spring types
 
-  new Label(window, "Spring types", "sans-bold");
+  //new Label(window, "Spring types", "sans-bold");
 /*
   {
     Button *b = new Button(window, "structural");
@@ -475,10 +475,10 @@ void WaterSimulator::initGUI(Screen *screen) {
     fb->setEditable(true);
     fb->setFixedSize(Vector2i(100, 20));
     fb->setFontSize(14);
-    //fb->setValue(cp->density / 10);
+    fb->setValue(wp->density / 10);
     fb->setUnits("g/cm^2");
     fb->setSpinnable(true);
-    //fb->setCallback([this](float value) { cp->density = (double)(value * 10); });
+    fb->setCallback([this](float value) { wp->density = (double)(value * 10); });
 
     new Label(panel, "ks :", "sans-bold");
 
@@ -486,11 +486,11 @@ void WaterSimulator::initGUI(Screen *screen) {
     fb->setEditable(true);
     fb->setFixedSize(Vector2i(100, 20));
     fb->setFontSize(14);
-    //fb->setValue(cp->ks);
+    fb->setValue(wp->ks);
     fb->setUnits("N/m");
     fb->setSpinnable(true);
     fb->setMinValue(0);
-    //fb->setCallback([this](float value) { cp->ks = value; });
+    fb->setCallback([this](float value) { wp->ks = value; });
   }
 
   // Simulation constants
@@ -602,7 +602,6 @@ void WaterSimulator::initGUI(Screen *screen) {
   }
 
   // Appearance
-
   new Label(window, "Appearance", "sans-bold");
 
   {
@@ -611,12 +610,12 @@ void WaterSimulator::initGUI(Screen *screen) {
     cb->setCallback(
         [this, screen](int idx) { activeShader = static_cast<e_shader>(idx); });
   }
-
+/**
   new Label(window, "Color", "sans-bold");
 
   {
     ColorWheel *cw = new ColorWheel(window, color);
     cw->setCallback(
         [this](const nanogui::Color &color) { this->color = color; });
-  }
+  }**/
 }

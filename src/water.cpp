@@ -47,11 +47,13 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
                      vector<CollisionObject *> *collision_objects) {
   double mass = wp->density;
   double delta_t = 1.0f / frames_per_sec / simulation_steps;
-  for (int i = 0; i < point_masses.size(); i++) {
-    point_masses[i].forces = 0;
-    for (int j = 0; j < external_accelerations.size(); j++) {
-      point_masses[i].forces += mass * external_accelerations[j];
-    }
+  Vector3D ef = Vector3D();
+  for (int j = 0; j < external_accelerations.size(); j++) {
+    ef += external_accelerations[j];
+  }
+  ef *= mass;
+  for (PointMass &p : point_masses) {
+    p.forces = ef;
   }
 
 
@@ -62,10 +64,12 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     self_collide((*bmasses[0]), candidates);
 
     for (PointMass* pm : bmasses) {
+      /**
       float r1 = (float) rand() / (RAND_MAX)*0.01;
       float r2 = (float) rand() / (RAND_MAX)*0.01;
       float r3 = (float) rand() / (RAND_MAX)*0.01;
-      Vector3D pressure = Vector3D(r1,r2,r3);
+      Vector3D pressure = Vector3D(r1,r2,r3);**/
+      Vector3D pressure = Vector3D();
       //Vector3D correction = Vector3D();
       //int correctNum = 0;
       vector<PointMass*> close;
@@ -92,25 +96,8 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
 
       pm->forces += pressure;
     }
-  /**
-    if (correctNum > 0) {
-      correction = 1.0/(correctNum * simulation_steps) * correction;
-      pm.position = pm.last_position + correction ;
-    }**/
   }
-  /*
-  printf("mass: %f\n", mass);
 
-  printf("ext force: (%f, %f, %f)\n",
-    external_accelerations[0].x, external_accelerations[0].y,
-    external_accelerations[0].z);
-
-  printf("position: (%f, %f, %f)\n", point_masses[0].position.x,
-    point_masses[0].position.y, point_masses[0].position.z);
-
-  printf("Force: (%f, %f, %f)\n", point_masses[0].forces.x,
-    point_masses[0].forces.y, point_masses[0].forces.z);
-  */
   // Verlet integration to compute new point mass positions
   for (PointMass &p : point_masses) {
     Vector3D old = p.position;
