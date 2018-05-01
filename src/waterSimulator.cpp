@@ -49,7 +49,10 @@ void WaterSimulator::loadWater(Water *water) { this->water = water; }
 
 void WaterSimulator::loadWaterParameters(WaterParameters *wp) { this->wp = wp; }
 
-void WaterSimulator::loadCollisionObjects(vector<CollisionObject *> *objects) { this->collision_objects = objects; }
+void WaterSimulator::loadCollisionObjects(vector<CollisionObject *> *objects, Box *cont) { 
+  this->collision_objects = objects; 
+  this->container = cont;
+}
 
 /**
  * Initializes the cloth simulation and spawns a new thread to separate
@@ -112,7 +115,7 @@ void WaterSimulator::drawContents() {
 
     for (int i = 0; i < simulation_steps; i++) {
       water->simulate(frames_per_sec, simulation_steps,
-        wp, external_accelerations, collision_objects);
+        wp, external_accelerations, collision_objects, container);
     }
   }
 
@@ -145,6 +148,10 @@ void WaterSimulator::drawContents() {
     drawPhong(shader);
     break;
   }*/
+
+  // Render the box
+  container->render(shader);
+
   for (CollisionObject *co : *collision_objects) {
     co->render(shader);
   }
@@ -385,7 +392,8 @@ bool WaterSimulator::keyCallbackEvent(int key, int scancode, int action,
       break;
     case 'r':
     case 'R':
-      water->reset();
+      // Resets pointmasses and objects
+      water->reset(collision_objects);
       break;
     case ' ':
       resetCamera();

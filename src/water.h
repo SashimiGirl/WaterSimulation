@@ -9,6 +9,7 @@
 #include "CGL/misc.h"
 #include "clothMesh.h"
 #include "collision/collisionObject.h"
+#include "collision/box.h"
 #include "spring.h"
 
 using namespace CGL;
@@ -37,9 +38,10 @@ struct Water {
 
   void simulate(double frames_per_sec, double simulation_steps, WaterParameters *wp,
                 vector<Vector3D> external_accelerations,
-                vector<CollisionObject *> *collision_objects);
+                vector<CollisionObject *> *collision_objects,
+                Box *container);
 
-  void reset();
+  void reset(vector<CollisionObject *> *collision_objects);
 
   void build_spatial_map();
   void buildSurfaceMesh();

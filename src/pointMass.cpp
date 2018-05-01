@@ -7,7 +7,7 @@ using namespace nanogui;
 using namespace CGL;
 
 void PointMass::collide(PointMass &pm) {
-  // TODO (Part 3.1): Handle collisions with spheres.
+  // Handle collisions with spheres.
   double dist = (pm.position - position).norm();
   if (abs(dist) <= radius) {
   	Vector3D tangent = position + (pm.position - position) / dist * radius;

@@ -18,7 +18,7 @@ public:
 
   void loadWater(Water *water);
   void loadWaterParameters(WaterParameters *wp);
-  void loadCollisionObjects(vector<CollisionObject *> *objects);
+  void loadCollisionObjects(vector<CollisionObject *> *objects, Box *cont);
   virtual bool isAlive();
   virtual void drawContents();
 
@@ -54,6 +54,7 @@ private:
   Water *water;
   WaterParameters *wp;
   vector<CollisionObject *> *collision_objects;
+  Box *container;
 
   // OpenGL attributes
 

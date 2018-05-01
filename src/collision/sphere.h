@@ -10,9 +10,7 @@ using namespace std;
 struct Sphere : public CollisionObject {
 public:
   Sphere(const Vector3D &origin, double radius, double friction)
-      : origin(origin), radius(radius), radius2(radius * radius),
-        friction(friction), start_position(position), position(position),
-        last_position(position) {}
+      : friction(friction), CollisionObject(origin, radius) {}
 
   void render(GLShader &shader);
   void collide(PointMass &pm);
@@ -22,19 +20,7 @@ public:
     return (position - last_position) / delta_t;
   }
 
-  // static values
-  Vector3D start_position;
-
-  // dynamic values
-  Vector3D position;
-  Vector3D last_position;
-  Vector3D forces;
-
 private:
-  Vector3D origin;
-  double radius;
-  double radius2;
-
   double friction;
 };
 

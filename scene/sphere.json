@@ -1,4 +1,9 @@
 {
+  "sphere": {
+	"origin": [0, 0.5, 0],
+	"radius": 0.1,
+	"friction": 0
+  },
   "water": {
     "damping": 0.2,
     "density": 1.0,
@@ -6,6 +11,6 @@
     "viscosity" : 0.1,
     "num_length_points": 10,
     "num_width_points": 10,
-    "num_height_points": 30
+    "num_height_points": 20
   }
 }
