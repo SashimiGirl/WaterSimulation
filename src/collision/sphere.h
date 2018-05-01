@@ -22,6 +22,7 @@ public:
 
 private:
   double friction;
+  bool pinned = false;
 };
 
 #endif /* COLLISIONOBJECT_SPHERE_H */

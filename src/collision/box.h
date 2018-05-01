@@ -14,11 +14,11 @@ using namespace std;
 
 struct Box : public CollisionObject {
 public:
-  Box(double friction, double xshift, double yshift, 
+  Box(double friction, double elasticity, double xshift, double yshift,
     double zshift, double s)
-      : friction(friction), xshift(xshift), yshift(yshift), 
+      : friction(friction), elasticity(elasticity), xshift(xshift), yshift(yshift),
       zshift(zshift), s(s), CollisionObject(100.0) {
-      
+
       	point.emplace_back(Vector3D(xshift, yshift, zshift)); // Bottom
       	point.emplace_back(Vector3D(xshift, yshift, zshift)); // Left
       	point.emplace_back(Vector3D(xshift + s, yshift + s, zshift)); // Right
@@ -40,6 +40,7 @@ public:
   vector<Vector3D> normal;
 
   double friction;
+  double elasticity;
   double xshift;
   double yshift;
   double zshift;

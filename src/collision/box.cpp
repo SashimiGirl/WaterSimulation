@@ -15,28 +15,15 @@ void Box::collide(PointMass &pm) {
   for (int i = 0; i < 5; i++) {
     double t = dot((pm.position - point[i]), normal[i]);
     if (t <= pm.radius) {
-      t = dot((point[i] - pm.position), normal[i]) 
-        / dot(normal[i], normal[i]);
-      Vector3D tangent = pm.position + t * normal[i];
+      //t = dot((point[i] - pm.position), normal[i])
+      //  / dot(normal[i], normal[i]);
+      //Vector3D tangent = pm.position + t * normal[i];
       // Little bounce?
-      pm.last_position = pm.position;
-      pm.position = tangent + normal[i] * pm.radius;
+      //pm.last_position = pm.position;
+      pm.position += (1.0 + elasticity) * (dot(point[i] - pm.position, normal[i]) +  pm.radius + SURFACE_OFFSET) * normal[i];
+      pm.position = (1 - friction) * (pm.position - pm.last_position) + pm.last_position;
     }
   }
-  /* Normal collisions with box
-  for (int i = 0; i < 5; i++) {
-    double t = dot((point[i] - pm.last_position), normal[i]) 
-      / dot((pm.position - pm.last_position).unit(), normal[i]);
-    if (t <= 0) {
-      t = dot((point[i] - pm.position), normal[i]) 
-        / dot(normal[i], normal[i]);
-      if (t >= 0) {
-        Vector3D tangent = pm.position + t * normal[i];
-        Vector3D correction = (tangent - pm.last_position) + SURFACE_OFFSET * normal[i];
-        pm.position = pm.last_position + (1 - friction) * correction;
-      }
-    }
-  }*/
 }
 
 void Box::collide(CollisionObject &s) {
@@ -44,7 +31,7 @@ void Box::collide(CollisionObject &s) {
   for (int i = 0; i < 5; i++) {
     double t = dot((s.position - point[i]), normal[i]);
     if (t <= s.radius) {
-      t = dot((point[i] - s.position), normal[i]) 
+      t = dot((point[i] - s.position), normal[i])
         / dot(normal[i], normal[i]);
       Vector3D tangent = s.position + t * normal[i];
       // Little bounce?
@@ -62,14 +49,14 @@ void Box::render(GLShader &shader) {
    * (1, 1, 0) | (1, 1, 1)
    * (1, 0, 0) | (1, 0, 1)
    * (0, 0, 0) | (0, 0, 1)
-   * (0, 1, 0) | (0, 1, 1) 
+   * (0, 1, 0) | (0, 1, 1)
   **/
 
   // Bottom plane
   MatrixXf positions(3, 4);
   MatrixXf normals(3, 4);
   Vector3f sNormal(0, 1, 0);
-  
+
   positions.col(0) << Vector3f(xshift + s, yshift, zshift);
   positions.col(1) << Vector3f(xshift + s, yshift, zshift + s);
   positions.col(2) << Vector3f(xshift, yshift, zshift);

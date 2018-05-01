@@ -51,25 +51,33 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   for (int j = 0; j < external_accelerations.size(); j++) {
     ef += external_accelerations[j];
   }
-  ef *= mass;
+  Vector3D waterf = mass * ef;
   for (PointMass &p : point_masses) {
-    p.forces = ef;
+    p.forces = waterf;
+  }
+  // Applying external forces (gravity) to objects
+  for (auto co : *collision_objects) {
+    co->forces = ef * co->mass;
   }
 
-
   build_spatial_map();
+  vector<vector<PointMass*> *> bs;
   for (auto &bucket : map) {
-    vector<PointMass*> bmasses = *(bucket.second);
+    bs.push_back(bucket.second);
+  }
+  #pragma omp parallel for
+  for (auto iter = bs.begin(); iter < bs.end(); iter++) {
+    vector<PointMass*> bmasses = *(iter[0]);
     vector<PointMass*> candidates;
     self_collide((*bmasses[0]), candidates);
 
     for (PointMass* pm : bmasses) {
-      /**
+
       float r1 = (float) rand() / (RAND_MAX)*0.01;
       float r2 = (float) rand() / (RAND_MAX)*0.01;
       float r3 = (float) rand() / (RAND_MAX)*0.01;
-      Vector3D pressure = Vector3D(r1,r2,r3);**/
-      Vector3D pressure = Vector3D();
+      Vector3D pressure = Vector3D(r1,r2,r3);
+      //Vector3D pressure = Vector3D();
       //Vector3D correction = Vector3D();
       //int correctNum = 0;
       vector<PointMass*> close;
@@ -108,14 +116,6 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     p.last_position = old;
   }
 
-  // Applying external forces (gravity) to objects
-  for (int i = 0; i < collision_objects->size(); i++) {
-      (*collision_objects)[i]->forces = 0;
-      for (int j = 0; j < external_accelerations.size(); j++) {
-        (*collision_objects)[i]->forces += (*collision_objects)[i]->mass * external_accelerations[j];
-    }
-  }
-  
   // Verlet integration to compute new object positions
   for (int i = 0; i < collision_objects->size(); i++) {
       Vector3D old = (*collision_objects)[i]->position;
@@ -142,15 +142,16 @@ void Water::build_spatial_map() {
     delete(entry.second);
   }
   map.clear();
-  for (PointMass& p : point_masses) {
-    uint64_t code = hash_position(p.position);
+  //#pragma omp parallel for
+  for (auto p = point_masses.begin(); p < point_masses.end(); p++) {
+    uint64_t code = hash_position(p->position);
+    //#pragma omp critical
     if (map.find(code) == map.end()) {
       vector<PointMass *> *temp =  new vector<PointMass *>();
-      temp->emplace_back(&p);
+      temp->emplace_back(&(p[0]));
       map[code] = temp;
     } else {
-      vector<PointMass *> *temp =  map[code];
-      temp->emplace_back(&p);
+      map[code]->emplace_back(&(p[0]));
     }
   }
 
@@ -191,9 +192,9 @@ void Water::reset(vector<CollisionObject *> *collision_objects) {
     pm++;
   }
   for (int i = 0; i < collision_objects->size(); i++) {
-    (*collision_objects)[i]->last_position = 
+    (*collision_objects)[i]->last_position =
         (*collision_objects)[i]->start_position;
-    (*collision_objects)[i]->position = 
+    (*collision_objects)[i]->position =
         (*collision_objects)[i]->start_position;
   }
 }

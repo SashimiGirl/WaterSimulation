@@ -298,12 +298,13 @@ int main(int argc, char **argv) {
 
   // Creates object for the surrounding box
   // So no forces are applied to the box
-  double p_friction = 0.5;
+  double p_friction = 0.2;
+  double elasticity = 0.4;
   double size = 1.5;
   double xshift = -0.5;
   double yshift = 0;
   double zshift = -0.5;
-  Box *container = new Box(p_friction, xshift, yshift, 
+  Box *container = new Box(p_friction, elasticity, xshift, yshift,
     zshift, size);
 
   if (argc == 1) { // No arguments, default initialization
@@ -346,7 +347,7 @@ int main(int argc, char **argv) {
   // Attach callbacks to the GLFW window
 
   setGLFWCallbacks();
-
+  glEnable(GL_DEPTH_TEST);
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
 
