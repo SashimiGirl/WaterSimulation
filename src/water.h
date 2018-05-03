@@ -48,7 +48,8 @@ struct Water {
   float SPkernel(Vector3D in, float var, float scalar);
   float Pkernel(Vector3D in, float var, float scalar, float scalar2);
   Vector3D dSPkernel(Vector3D in, float var, float scalar);
-  float pointDensity(PointMass &pm);
+  float pointDensity(pointMass &p);
+  Vector3D deltaP(PointMass& p);
   void self_collide(PointMass &pm, vector<PointMass *> &candidates);
   void hash_collide(uint64_t hash, vector<PointMass *> &candidates);
   uint64_t hash_position(Vector3D pos);

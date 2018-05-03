@@ -312,6 +312,16 @@ float Water::pointDensity(PointMass &pm) {
 }
 
 
+Vector3D Water::deltaP(PointMass& p) {
+  float lamp = this->lambdas[p.hash];
+  Vector3D result;
+  for (PointMass& it : p.neighbors) {
+    result += (lamp + this->lambdas[it.hash]) * sSPkernel(p.position - it.position, TARGET_MAX, BIGCHIC);
+  }
+  result *= 1.0 / REST_DENSITY;
+  return result;
+}
+
 uint64_t Water::hash_position(Vector3D pos) {
   // TODO (Part 4.1): Hash a 3D position into a unique float identifier that represents
   // membership in some uniquely identified 3D box volume.
