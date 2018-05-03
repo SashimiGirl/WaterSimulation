@@ -10,8 +10,8 @@
 #define TARGET_MIN 2 * PARTICLE_RADIUS
 #define TARGET_MAX 4 * PARTICLE_RADIUS
 #define TARGET_REST 2 * PARTICLE_RADIUS
-#define BIGCHIC 0.01
-#define BIGCHIC2 0.21
+#define BIGCHIC 0.5
+#define BIGCHIC2 10.5
 #define BIGCHIC3 64
 #define EPSILON 0.1
 using namespace std;
@@ -127,7 +127,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       denom += gradC(i, &pboi).norm2();
     }
     denom += gradC(&pboi, &pboi).norm2();//case 2 k=i
-    cout << denom << "\n";
+    //cout << denom << "\n";
     this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
   }
 
