@@ -8,11 +8,10 @@
 
 #define PARTICLE_RADIUS 0.01
 #define TARGET_MIN 2 * PARTICLE_RADIUS
-#define TARGET_MAX 5 * PARTICLE_RADIUS
+#define TARGET_MAX 4 * PARTICLE_RADIUS
 #define TARGET_REST 2 * PARTICLE_RADIUS
-#define REST_DENSITY 0.02
-#define BIGCHIC 15
-#define BIGCHIC2 315
+#define BIGCHIC 0.01
+#define BIGCHIC2 0.21
 #define BIGCHIC3 64
 #define EPSILON 0.1
 using namespace std;
@@ -54,6 +53,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
                      Box *container) {
   this->lambdas.clear();
   double r = TARGET_REST / 2;
+  this->density = wp->density;
   double mass = wp->density * 4 / 3 * M_PI * r * r * r;
   double delta_t = 1.0f / frames_per_sec / simulation_steps;
   Vector3D ef = Vector3D();
@@ -121,15 +121,13 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   //Calculated the lambda at every point mass. Stores it in lambdas vector.
   for (PointMass &pboi : point_masses) {
     float rh = mass * pointDensity(pboi);
-    float C_i = rh/REST_DENSITY - 1;
+    float C_i = rh/this->density - 1;
     float denom = 0; // The denominator of the lambda
-    Vector3D part;
     for (PointMass* i : pboi.neighbors) {// Case 1 k=j.
-      Vector3D ker = dSPkernel(pboi.position - i->position, TARGET_MAX, BIGCHIC);
-      denom += ker.norm2()/(REST_DENSITY*REST_DENSITY);
-      part += ker;
+      denom += gradC(i, &pboi).norm2();
     }
-    denom += part.norm() * part.norm() / (REST_DENSITY*REST_DENSITY);//case 2 k=i
+    denom += gradC(&pboi, &pboi).norm2();//case 2 k=i
+    cout << denom << "\n";
     this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
   }
 
@@ -242,11 +240,25 @@ Vector3D Water::deltaP(PointMass& p) {
   float lamp = this->lambdas[p.hash];
   Vector3D result;
   for (PointMass* it : p.neighbors) {
-    result += (lamp + this->lambdas[it->hash]) * SPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
+    result += (lamp + this->lambdas[it->hash]) * dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
   }
-  result *= 1.0 / REST_DENSITY;
+  result *= 1.0 / this->density;
   return result;
 }
+//Find the gradient Ck
+Vector3D Water::gradC(PointMass* pk, PointMass* pi) {
+  if (pk == pi) {
+    Vector3D gradient;
+    for (PointMass* p : pk->neighbors) {
+      gradient += dSPkernel(pi->position - p->position, TARGET_MAX, BIGCHIC);
+    }
+    return gradient / this->density;
+  }
+  else {
+    return -dSPkernel(pi->position - pk->position, TARGET_MAX, BIGCHIC) / this->density;
+  }
+}
+
 
 uint64_t Water::hash_position(Vector3D pos) {
   float t = TARGET_MAX;

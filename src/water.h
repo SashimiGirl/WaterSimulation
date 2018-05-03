@@ -50,6 +50,7 @@ struct Water {
   Vector3D dSPkernel(Vector3D in, float var, float scalar);
   float pointDensity(PointMass &p);
   Vector3D deltaP(PointMass& p);
+  Vector3D gradC(PointMass* pk, PointMass* pi);
   void self_collide(PointMass &pm, vector<PointMass *> &candidates);
   void hash_collide(uint64_t hash, vector<PointMass *> &candidates);
   uint64_t hash_position(Vector3D pos);
@@ -58,7 +59,7 @@ struct Water {
   int num_length_points;
   int num_width_points;
   int num_height_points;
-
+  double density;
   // Cloth components
   vector<PointMass> point_masses;
   unordered_map<int, float> lambdas;
