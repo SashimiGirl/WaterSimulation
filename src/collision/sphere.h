@@ -16,7 +16,7 @@ public:
       }
 
   void render(GLShader &shader);
-  void collide(PointMass &pm);
+  void collide(PointMass &pm, bool flag);
 
   Vector3D normal();
   // Vector3D velocity(double delta_t) {

@@ -7,7 +7,7 @@
 using namespace nanogui;
 using namespace CGL;
 
-void Sphere::collide(PointMass &pm) {
+void Sphere::collide(PointMass &pm, bool flag) {
   // Handle point mass collisions with spheres.
   double dist = (pm.position - position).norm();
   if (abs(dist) <= radius) {
@@ -26,10 +26,12 @@ void Sphere::collide(PointMass &pm) {
     //normalc = * normalc * dot(mass * this->velocity + pm.mass * pm.velocity, normalc);
     Vector3D bigboi = this->velocity - vs*normalc;
     Vector3D lilbit = pm.velocity - vp*normalc;
-    this->velocity = bigboi + (this->elasticity * (vsboi-vfatboi) + vfatboi) * normalc;
+    if (flag) {
+      this->velocity =  (bigboi + (this->elasticity * (vsboi-vfatboi) + vfatboi) * normalc);
+    }
     pm.velocity = lilbit + (this->elasticity * (vpboi-vfatboi) + vfatboi) * normalc;
+
   }
-  //cout << this->velocity <<"\n";
 }
 
 void Sphere::render(GLShader &shader) {

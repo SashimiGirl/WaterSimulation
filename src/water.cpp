@@ -85,9 +85,9 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     //p.velocity *= 1 - wp->damping;
     p.velocity += p.forces / mass * delta_t;
     for (CollisionObject *co : *collision_objects) {
-      co->collide(p);
+      co->collide(p, true);
     }
-    container->collide(p);
+    container->collide(p, true);
     p.tmp_position = p.position;
   }
   //Building spatial map for efficiency.
@@ -144,9 +144,9 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       Vector3D dp = deltaP(p);
       p.position = p.tmp_position + dp / simulation_steps;
       for (CollisionObject* co : *collision_objects) {
-        co->collide(p);
+        co->collide(p, false || wow == 9);
       }
-      container->collide(p);
+      container->collide(p, true);
       p.velocity = (p.position - p.last_position) / delta_t;
     }
     for (PointMass& p : point_masses) {

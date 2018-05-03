@@ -34,7 +34,7 @@ public:
       }
 
   void render(GLShader &shader);
-  void collide(PointMass &pm);
+  void collide(PointMass &pm, bool flag);
   void collide(CollisionObject &s);
 
   vector<Vector3D> point;

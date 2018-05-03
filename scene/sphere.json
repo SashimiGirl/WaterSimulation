@@ -10,8 +10,8 @@
     "density": 1.0,
     "ks": 6000.0,
     "viscosity" : 0.1,
-    "num_length_points": 30,
-    "num_width_points": 30,
+    "num_length_points": 5,
+    "num_width_points": 5,
     "num_height_points": 5
   }
 }
