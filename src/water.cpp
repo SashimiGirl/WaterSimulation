@@ -8,9 +8,9 @@
 
 #define PARTICLE_RADIUS 0.01
 #define TARGET_MIN 2 * PARTICLE_RADIUS
-#define TARGET_MAX 3 * PARTICLE_RADIUS
+#define TARGET_MAX 5 * PARTICLE_RADIUS
 #define TARGET_REST 2 * PARTICLE_RADIUS
-#define REST_DENSITY 1
+#define REST_DENSITY 0.02
 #define BIGCHIC 15
 #define BIGCHIC2 315
 #define BIGCHIC3 64
@@ -72,150 +72,6 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     co->forces = ef * co->mass;
   }
   //Move verlet here for sph
-
-  build_spatial_map();
-  vector<vector<PointMass*> *> bs;
-  for (auto &bucket : map) {
-    bs.push_back(bucket.second);
-  }
-  /**
-  #pragma omp parallel for
-  for (auto iter = bs.begin(); iter < bs.end(); iter++) {
-    vector<PointMass*> bmasses = *(iter[0]);
-    vector<PointMass*> candidates;
-    self_collide((*bmasses[0]), candidates);
-    for (PointMass* pm : bmasses) {
-      float pressure = 0.0;
-      for (PointMass* c : candidates) {
-        Vector3D dist = pm->last_position- c->last_position;
-
-        float distf = dist.norm();
-        if (pm != c && distf < KERNEL_DISTANCE) {
-          pressure +=  mass * SPkernel(dist, KERNEL_DISTANCE, 15);//SPkernel(dist, 0.8, 15)
-        }
-      }
-      this->pressures[pm->hash] = pressure;
-    }
-  }
-
-  for (PointMass &p : point_masses) {
-    vector<PointMass*> candidates;
-    vector<PointMass*> neighbors;
-    Vector3D correction;
-    float pressure = 0.0;
-    p.position = p.last_position + p.velocity * delta_t + 0.5 * p.forces / mass * delta_t * delta_t;
-
-    hash_collide(hash_position(p.position), candidates);
-    for (PointMass* c : candidates) {
-      Vector3D dist = c->last_position - p.position;
-
-      float distf = dist.norm() - TARGET_PRESSURE;
-      if (p.hash != c->hash && distf < PARTICLE_RADIUS) {
-        neighbors.push_back(c);
-        pressure += distf / TARGET_PRESSURE;
-      }
-    }
-    for (PointMass* n : neighbors) {
-      Vector3D duck = p.position - n->position;
-      duck.normalize();
-      correction +=  0.05 * (this->pressures[n->hash] - pressure) * duck;
-      //dSPkernel((pressure - this->pressures[n->hash]), 0.1, 15) *
-    }
-    p.position += correction;
-    p.velocity = (p.position - p.last_position) / delta_t;
-  }
-**/
-
-  #pragma omp parallel for
-  for (auto iter = bs.begin(); iter < bs.end(); iter++) {
-    vector<PointMass*> bmasses = *(iter[0]);
-    vector<PointMass*> candidates;
-    self_collide((*bmasses[0]), candidates);
-
-    for (PointMass* pm : bmasses) {
-      /*
-      float r1 = (float) rand() / (RAND_MAX)*0.01;
-      float r2 = (float) rand() / (RAND_MAX)*0.01;
-      float r3 = (float) rand() / (RAND_MAX)*0.01;
-      Vector3D pressure = Vector3D(r1,r2,r3);
-      Vector3D correction = Vector3D();
-      int num = 0;
-      for (PointMass* c : candidates) {
-        Vector3D dir = c->position - pm->position;
-        if (c != pm && dir.norm2() < PARTICLE_RADIUS * PARTICLE_RADIUS) {
-          dir.normalize();
-          num += 1;
-          Vector3D tmp = c->position - dir * PARTICLE_RADIUS;
-          correction += tmp - pm->position;
-        }
-      }
-      if (num > 0) {
-        pm->position += correction / (num * simulation_steps);
-      }*/
-
-      vector<PointMass*> close;
-      for (PointMass* c : candidates) {
-        Vector3D dist = pm->position - c->position;
-
-        float distf = dist.norm();
-        if (pm != c && distf < TARGET_MIN) {
-          // Add pressure stuffs.
-          dist.normalize();
-          float pmcomp = dot(pm->last_velocity, dist);
-          float ccomp = dot(c->last_velocity, dist);
-          if (ccomp > pmcomp) {
-            pm->velocity += (1 - pm->friction) * (ccomp - pmcomp) * dist;
-          }
-          //pressure += dist * wp->ks * mass * distf;
-        }
-        else if (pm != c && distf < TARGET_MAX) {
-          close.push_back(c);
-        }
-      }
-      pm->neighbors = close;
-      float r1 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
-      float r2 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
-      float r3 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
-      Vector3D tension = Vector3D(r1, r2, r3);
-      for (int i=0; close.size() > 0 && i < 4; i++) {
-        int hbond = (float) rand() / (RAND_MAX) * close.size();
-        Vector3D dist = close[hbond]->position - pm->position;
-        float distf = dist.norm2();
-        dist.normalize();
-        tension += wp->ks * mass * mass * TARGET_MIN * dist / distf;
-        //close[hbond]->forces -= tentemp;
-        //cout << distf;
-      }
-
-      pm->forces += tension;
-    }
-  }
-  for (PointMass &pboi : point_masses) {
-    float rh = mass * pointDensity(pboi);
-    float C_i = rh/REST_DENSITY - 1;
-    float denom = 0;
-    float part = 0;
-    for (PointMass &i : pboi.neighbors) {
-      float ker = SPkernel(pboi.position - i.position, TARGET_MAX, BIGCHIC);
-      denom += ker*ker;
-      part += ker;
-    }
-    denom += part * part;
-    lambda[pboi.hash] = -C_i/(denom+EPSILON);
-  }
-  // Verlet integration to compute new object positions
-  for (CollisionObject* co : *collision_objects) {
-      Vector3D old = co->position;
-      co->position += (co->velocity) * delta_t
-        + 0.5 * co->forces / co->mass * delta_t * delta_t;
-      co->last_position = old;
-    // Check if object hit the box
-      co->velocity += co->forces / co->mass * delta_t;
-      //cout << co->position << "\n";
-      container->collide(*co);
-  }
-
-
   // Verlet integration to compute new point mass positions
   #pragma omp parallel for
   for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
@@ -229,6 +85,71 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     container->collide(p);
   }
 
+  build_spatial_map();
+  vector<vector<PointMass*> *> bs;
+  for (auto &bucket : map) {
+    bs.push_back(bucket.second);
+  }
+
+  #pragma omp parallel for
+  for (auto iter = bs.begin(); iter < bs.end(); iter++) {
+    vector<PointMass*> bmasses = *(iter[0]);
+    vector<PointMass*> candidates;
+    self_collide((*bmasses[0]), candidates);
+
+    for (PointMass* pm : bmasses) {
+
+      vector<PointMass*> close;
+      for (PointMass* c : candidates) {
+        Vector3D dist = pm->position - c->position;
+        float distf = dist.norm();
+        if (pm != c && distf < TARGET_MAX) {
+          close.push_back(c);
+        }
+      }
+      pm->neighbors.clear();
+      //delete &pm->neighbors;
+      pm->neighbors = close;
+
+    }
+  }
+  for (PointMass &pboi : point_masses) {
+    float rh = mass * pointDensity(pboi);
+    float C_i = rh/REST_DENSITY - 1;
+    float denom = 0;
+    Vector3D part;
+    for (PointMass* i : pboi.neighbors) {
+      Vector3D ker = dSPkernel(pboi.position - i->position, TARGET_MAX, BIGCHIC);
+      denom += ker.norm2()/(REST_DENSITY*REST_DENSITY);
+      part += ker;
+    }
+    denom += part.norm() * part.norm() / (REST_DENSITY*REST_DENSITY);
+    this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
+  }
+
+  for (PointMass& p : point_masses) {
+    Vector3D dp = deltaP(p);
+    //cout << dp<<"\n";
+    p.position += dp;
+    p.velocity = (p.position - p.last_position) / delta_t;
+    for (CollisionObject* co : *collision_objects) {
+      co->collide(p);
+    }
+    container->collide(p);
+  }
+
+
+  // Verlet integration to compute new object positions
+  for (CollisionObject* co : *collision_objects) {
+      Vector3D old = co->position;
+      co->position += (co->velocity) * delta_t
+        + 0.5 * co->forces / co->mass * delta_t * delta_t;
+      co->last_position = old;
+    // Check if object hit the box
+      co->velocity += co->forces / co->mass * delta_t;
+      //cout << co->position << "\n";
+      container->collide(*co);
+  }
 
   // Applying collisions to each point mass to object
   // #pragma omp parallel for
@@ -293,7 +214,7 @@ float Water::SPkernel(Vector3D in, float var, float scalar) {
   float tmp = var - in.norm();
   return scalar / (M_PI * pow(var, 6)) * tmp * tmp * tmp;
 }
-float Water::PKernel(Vector 3D in, float var, float scalar, float scalar2) {
+float Water::Pkernel(Vector3D in, float var, float scalar, float scalar2) {
   float n = in.norm();
   float tmp = var*var - n*n;
   return scalar / (scalar2 * M_PI * pow(var, 9)) * tmp * tmp * tmp;
@@ -305,18 +226,17 @@ Vector3D Water::dSPkernel(Vector3D in, float var, float scalar) {
 }
 float Water::pointDensity(PointMass &pm) {
   float rho_i = 0;
-  for (PointMass &boi: pm.neighbors) {
-    rho_i += PKernel(pm.position - boi.position, TARGET_MAX, BIGCHIC2, BIGCHIC3);
+  for (PointMass* boi: pm.neighbors) {
+    rho_i += Pkernel(pm.position - boi->position, TARGET_MAX, BIGCHIC2, BIGCHIC3);
   }
   return rho_i;
 }
 
-
 Vector3D Water::deltaP(PointMass& p) {
   float lamp = this->lambdas[p.hash];
   Vector3D result;
-  for (PointMass& it : p.neighbors) {
-    result += (lamp + this->lambdas[it.hash]) * sSPkernel(p.position - it.position, TARGET_MAX, BIGCHIC);
+  for (PointMass* it : p.neighbors) {
+    result += (lamp + this->lambdas[it->hash]) * SPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
   }
   result *= 1.0 / REST_DENSITY;
   return result;
