@@ -73,6 +73,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   }
   //Move verlet here for sph
   // Verlet integration to compute new point mass positions
+  // Used to find predicted positions and velocities of the particles
   #pragma omp parallel for
   for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
     PointMass &p = iter[0];
@@ -85,12 +86,15 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     container->collide(p);
   }
 
+  //Building spatial map for efficiency.
   build_spatial_map();
   vector<vector<PointMass*> *> bs;
   for (auto &bucket : map) {
     bs.push_back(bucket.second);
   }
 
+  //Assigning neighbors to each point mass for easy access and efficiency.
+  //Stores it in neighbors vector in each particle.
   #pragma omp parallel for
   for (auto iter = bs.begin(); iter < bs.end(); iter++) {
     vector<PointMass*> bmasses = *(iter[0]);
@@ -113,20 +117,24 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
 
     }
   }
+
+  //Calculated the lambda at every point mass. Stores it in lambdas vector.
   for (PointMass &pboi : point_masses) {
     float rh = mass * pointDensity(pboi);
     float C_i = rh/REST_DENSITY - 1;
-    float denom = 0;
+    float denom = 0; // The denominator of the lambda
     Vector3D part;
-    for (PointMass* i : pboi.neighbors) {
+    for (PointMass* i : pboi.neighbors) {// Case 1 k=j.
       Vector3D ker = dSPkernel(pboi.position - i->position, TARGET_MAX, BIGCHIC);
       denom += ker.norm2()/(REST_DENSITY*REST_DENSITY);
       part += ker;
     }
-    denom += part.norm() * part.norm() / (REST_DENSITY*REST_DENSITY);
+    denom += part.norm() * part.norm() / (REST_DENSITY*REST_DENSITY);//case 2 k=i
     this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
   }
 
+  //Find delta p for every point and update the predicted positions.
+  //Update the velocities. Notice that force is never used except for external forces.
   for (PointMass& p : point_masses) {
     Vector3D dp = deltaP(p);
     //cout << dp<<"\n";
@@ -150,12 +158,6 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       //cout << co->position << "\n";
       container->collide(*co);
   }
-
-  // Applying collisions to each point mass to object
-  // #pragma omp parallel for
-  // for (iter = point_masses.begin(); iter < point_masses.end(); iter++) {
-  //
-  // }
 }
 
 void Water::build_spatial_map() {
@@ -210,20 +212,24 @@ void Water::hash_collide(uint64_t hash, vector<PointMass *> &candidates) {
     }
   }
 }
+//Spikey kernel
 float Water::SPkernel(Vector3D in, float var, float scalar) {
   float tmp = var - in.norm();
   return scalar / (M_PI * pow(var, 6)) * tmp * tmp * tmp;
 }
+//Poly kernel
 float Water::Pkernel(Vector3D in, float var, float scalar, float scalar2) {
   float n = in.norm();
   float tmp = var*var - n*n;
   return scalar / (scalar2 * M_PI * pow(var, 9)) * tmp * tmp * tmp;
 }
+// derivative of spikey (gradient)
 Vector3D Water::dSPkernel(Vector3D in, float var, float scalar) {
   float tmp = var - in.norm();
   in.normalize();
   return 3 * scalar / (M_PI * pow(var, 6)) * tmp * tmp * in;
 }
+//Find the density at ever point. This is the C() function.
 float Water::pointDensity(PointMass &pm) {
   float rho_i = 0;
   for (PointMass* boi: pm.neighbors) {
@@ -231,7 +237,7 @@ float Water::pointDensity(PointMass &pm) {
   }
   return rho_i;
 }
-
+// Find the delta p correction for zero pressure change.
 Vector3D Water::deltaP(PointMass& p) {
   float lamp = this->lambdas[p.hash];
   Vector3D result;
@@ -243,8 +249,6 @@ Vector3D Water::deltaP(PointMass& p) {
 }
 
 uint64_t Water::hash_position(Vector3D pos) {
-  // TODO (Part 4.1): Hash a 3D position into a unique float identifier that represents
-  // membership in some uniquely identified 3D box volume.
   float t = TARGET_MAX;
   uint64_t result = (uint16_t) (floor(pos.x/t) + 32768);
   result = (result << 16) | (uint16_t) (floor(pos.x/t) + 32768);
