@@ -22,6 +22,7 @@ void Box::collide(PointMass &pm) {
       //pm.last_position = pm.position;
       pm.position += (1.0 + elasticity) * (dot(point[i] - pm.position, normal[i]) +  pm.radius + SURFACE_OFFSET) * normal[i];
       pm.position = (1 - friction) * (pm.position - pm.last_position) + pm.last_position;
+      pm.velocity = (1 - friction) * (pm.velocity - normal[i] * dot(pm.velocity, normal[i]));
     }
   }
 }
@@ -56,25 +57,25 @@ void Box::render(GLShader &shader) {
   MatrixXf normals(3, 4);
   Vector3f sNormal(0, 1, 0);
 
-  positions.col(0) << Vector3f(xshift + s, yshift, zshift);
-  positions.col(1) << Vector3f(xshift + s, yshift, zshift + s);
-  positions.col(2) << Vector3f(xshift, yshift, zshift);
-  positions.col(3) << Vector3f(xshift, yshift, zshift + s);
-
-  normals.col(0) << sNormal;
-  normals.col(1) << sNormal;
-  normals.col(2) << sNormal;
-  normals.col(3) << sNormal;
-
-
-  if (shader.uniform("in_color", false) != -1) {
-    shader.setUniform("in_color", color);
-  }
-
-  shader.uploadAttrib("in_position", positions);
-  shader.uploadAttrib("in_normal", normals);
-
-  shader.drawArray(GL_TRIANGLE_STRIP, 0, 4);
+  // positions.col(0) << Vector3f(xshift + s, yshift, zshift);
+  // positions.col(1) << Vector3f(xshift + s, yshift, zshift + s);
+  // positions.col(2) << Vector3f(xshift, yshift, zshift);
+  // positions.col(3) << Vector3f(xshift, yshift, zshift + s);
+  //
+  // normals.col(0) << sNormal;
+  // normals.col(1) << sNormal;
+  // normals.col(2) << sNormal;
+  // normals.col(3) << sNormal;
+  //
+  //
+  // if (shader.uniform("in_color", false) != -1) {
+  //   shader.setUniform("in_color", color);
+  // }
+  //
+  // shader.uploadAttrib("in_position", positions);
+  // shader.uploadAttrib("in_normal", normals);
+  //
+  // shader.drawArray(GL_TRIANGLE_STRIP, 0, 4);
 
   // Left Plane
   sNormal = Vector3f(1, 0, 0);

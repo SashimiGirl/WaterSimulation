@@ -15,7 +15,9 @@ using namespace nanogui;
 class Halfedge;
 
 struct PointMass {
-  PointMass(Vector3D pos, double radius, int hash) : start_position(pos), position(pos), radius(radius), hash(hash), friction(0.2), last_position(pos) {}
+  PointMass(Vector3D pos, double radius, int hash) :
+  start_position(pos), position(pos), radius(radius), hash(hash),
+  friction(0.05), last_position(pos) {}
 
   void collide(PointMass &pm);
   void render(GLShader &shader);
@@ -29,6 +31,7 @@ struct PointMass {
   double radius;
   double friction;
   int hash;
+  int bonds;
   double mass;
 
   // dynamic values
@@ -36,6 +39,7 @@ struct PointMass {
   Vector3D last_position;
   Vector3D forces;
   Vector3D velocity;
+  Vector3D last_velocity;
 
   // mesh reference
   Halfedge *halfedge;

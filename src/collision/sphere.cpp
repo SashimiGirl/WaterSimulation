@@ -17,10 +17,10 @@ void Sphere::collide(PointMass &pm) {
     Vector3D normalc = tangent - position;
     normalc.normalize();
     normalc = (1 + this->elasticity)* normalc * dot(pm.velocity, normalc);
-    this->velocity -= normalc * pm.mass / mass;
+    this->velocity += normalc * pm.mass / mass;
     pm.velocity += normalc;
   }
-  cout << this->velocity <<"\n";
+  //cout << this->velocity <<"\n";
 }
 
 void Sphere::render(GLShader &shader) {
