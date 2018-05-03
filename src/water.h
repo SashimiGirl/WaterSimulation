@@ -46,7 +46,9 @@ struct Water {
   void build_spatial_map();
   void buildSurfaceMesh();
   float SPkernel(Vector3D in, float var, float scalar);
+  float Pkernel(Vector3D in, float var, float scalar, float scalar2);
   Vector3D dSPkernel(Vector3D in, float var, float scalar);
+  float pointDensity(PointMass &pm);
   void self_collide(PointMass &pm, vector<PointMass *> &candidates);
   void hash_collide(uint64_t hash, vector<PointMass *> &candidates);
   uint64_t hash_position(Vector3D pos);
@@ -58,6 +60,7 @@ struct Water {
 
   // Cloth components
   vector<PointMass> point_masses;
+  unordered_map<int, float> lambdas;
   unordered_map<int, float> pressures;
   ClothMesh *surfaceMesh;
 

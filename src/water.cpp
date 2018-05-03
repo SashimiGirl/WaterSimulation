@@ -10,7 +10,11 @@
 #define TARGET_MIN 2 * PARTICLE_RADIUS
 #define TARGET_MAX 3 * PARTICLE_RADIUS
 #define TARGET_REST 2 * PARTICLE_RADIUS
-
+#define REST_DENSITY 1
+#define BIGCHIC 15
+#define BIGCHIC2 315
+#define BIGCHIC3 64
+#define EPSILON 0.1
 using namespace std;
 
 Water::Water(int num_length_points, int num_width_points, int num_height_points) {
@@ -48,6 +52,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
                      vector<Vector3D> external_accelerations,
                      vector<CollisionObject *> *collision_objects,
                      Box *container) {
+  this->lambdas.clear();
   double r = TARGET_REST / 2;
   double mass = wp->density * 4 / 3 * M_PI * r * r * r;
   double delta_t = 1.0f / frames_per_sec / simulation_steps;
@@ -66,6 +71,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   for (auto co : *collision_objects) {
     co->forces = ef * co->mass;
   }
+  //Move verlet here for sph
 
   build_spatial_map();
   vector<vector<PointMass*> *> bs;
@@ -166,6 +172,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
           close.push_back(c);
         }
       }
+      pm->neighbors = close;
       float r1 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
       float r2 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
       float r3 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
@@ -183,7 +190,19 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       pm->forces += tension;
     }
   }
-
+  for (PointMass &pboi : point_masses) {
+    float rh = mass * pointDensity(pboi);
+    float C_i = rh/REST_DENSITY - 1;
+    float denom = 0;
+    float part = 0;
+    for (PointMass &i : pboi.neighbors) {
+      float ker = SPkernel(pboi.position - i.position, TARGET_MAX, BIGCHIC);
+      denom += ker*ker;
+      part += ker;
+    }
+    denom += part * part;
+    lambda[pboi.hash] = -C_i/(denom+EPSILON);
+  }
   // Verlet integration to compute new object positions
   for (CollisionObject* co : *collision_objects) {
       Vector3D old = co->position;
@@ -274,11 +293,24 @@ float Water::SPkernel(Vector3D in, float var, float scalar) {
   float tmp = var - in.norm();
   return scalar / (M_PI * pow(var, 6)) * tmp * tmp * tmp;
 }
+float Water::PKernel(Vector 3D in, float var, float scalar, float scalar2) {
+  float n = in.norm();
+  float tmp = var*var - n*n;
+  return scalar / (scalar2 * M_PI * pow(var, 9)) * tmp * tmp * tmp;
+}
 Vector3D Water::dSPkernel(Vector3D in, float var, float scalar) {
   float tmp = var - in.norm();
   in.normalize();
   return 3 * scalar / (M_PI * pow(var, 6)) * tmp * tmp * in;
 }
+float Water::pointDensity(PointMass &pm) {
+  float rho_i = 0;
+  for (PointMass &boi: pm.neighbors) {
+    rho_i += PKernel(pm.position - boi.position, TARGET_MAX, BIGCHIC2, BIGCHIC3);
+  }
+  return rho_i;
+}
+
 
 uint64_t Water::hash_position(Vector3D pos) {
   // TODO (Part 4.1): Hash a 3D position into a unique float identifier that represents
