@@ -36,6 +36,7 @@ struct PointMass {
   // dynamic values
   Vector3D position;
   Vector3D last_position;
+  Vector3D tmp_position;
   Vector3D forces;
   Vector3D velocity;
   Vector3D last_velocity;

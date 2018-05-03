@@ -133,16 +133,20 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
 
   //Find delta p for every point and update the predicted positions.
   //Update the velocities. Notice that force is never used except for external forces.
+
   for (PointMass& p : point_masses) {
     Vector3D dp = deltaP(p);
-    //cout << dp<<"\n";
-    p.position += dp;
-    p.velocity = (p.position - p.last_position) / delta_t;
+    p.tmp_position = p.position + dp;
+    p.velocity = (p.tmp_position - p.last_position) / delta_t;
     for (CollisionObject* co : *collision_objects) {
       co->collide(p);
     }
     container->collide(p);
   }
+  for (PointMass& p : point_masses) {
+    p.position = p.tmp_position;
+  }
+
 
 
   // Verlet integration to compute new object positions
@@ -243,6 +247,7 @@ Vector3D Water::deltaP(PointMass& p) {
     result += (lamp + this->lambdas[it->hash]) * dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
   }
   result *= 1.0 / this->density;
+  //cout << result << "\n";
   return result;
 }
 //Find the gradient Ck
