@@ -17,7 +17,7 @@ class Halfedge;
 struct PointMass {
   PointMass(Vector3D pos, double radius, int hash) :
   start_position(pos), position(pos), radius(radius), hash(hash),
-  friction(0.05), last_position(pos) {}
+  friction(0.2), last_position(pos) {}
 
   void collide(PointMass &pm);
   void render(GLShader &shader);
@@ -31,7 +31,6 @@ struct PointMass {
   double radius;
   double friction;
   int hash;
-  int bonds;
   double mass;
 
   // dynamic values

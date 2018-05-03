@@ -8,8 +8,8 @@
 
 #define PARTICLE_RADIUS 0.01
 #define TARGET_MIN 2 * PARTICLE_RADIUS
-#define TARGET_MAX 3.0 * PARTICLE_RADIUS
-#define TARGET_REST 2.5 * PARTICLE_RADIUS
+#define TARGET_MAX 3 * PARTICLE_RADIUS
+#define TARGET_REST 2 * PARTICLE_RADIUS
 
 using namespace std;
 
@@ -36,7 +36,7 @@ void Water::buildVolume() {
     for (int i = 0; i < num_height_points; i++) {
       for (int j = 0; j < num_width_points; j++) {
         point_masses.emplace_back(
-            Vector3D(TARGET_REST * j, TARGET_REST * i + 1.0, TARGET_REST * k),
+            Vector3D(TARGET_MIN * j, TARGET_MIN * i + 1.0, TARGET_MIN * k),
             PARTICLE_RADIUS, k * num_width_points * num_height_points + i * num_width_points + j);
       }
     }
@@ -61,7 +61,6 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     p.mass = mass;
     p.last_position = p.position;
     p.last_velocity = p.velocity;
-    p.bonds = 0;
   }
   // Applying external forces (gravity) to objects
   for (auto co : *collision_objects) {
@@ -158,8 +157,8 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
           dist.normalize();
           float pmcomp = dot(pm->last_velocity, dist);
           float ccomp = dot(c->last_velocity, dist);
-          if ((1 - pm->friction) * ccomp > pmcomp) {
-            pm->velocity += (-pmcomp + ((1 - pm->friction) * ccomp)) * dist;
+          if (ccomp > pmcomp) {
+            pm->velocity += (1 - pm->friction) * (ccomp - pmcomp) * dist;
           }
           //pressure += dist * wp->ks * mass * distf;
         }
@@ -167,20 +166,17 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
           close.push_back(c);
         }
       }
-      Vector3D tension = Vector3D();
-      for (int i=0; close.size() > 0 && i < 2; i++) {
+      float r1 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
+      float r2 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
+      float r3 = (float) rand() / (RAND_MAX)*0.0001 - 0.00005;
+      Vector3D tension = Vector3D(r1, r2, r3);
+      for (int i=0; close.size() > 0 && i < 4; i++) {
         int hbond = (float) rand() / (RAND_MAX) * close.size();
-        PointMass* test = close[hbond];
-        if (test->bonds < 4) {
-          Vector3D dist = test->position - pm->position;
-          float distf = dist.norm() - TARGET_REST;
-          dist.normalize();
-          Vector3D tentemp = mass * dist * wp->ks * distf;
-          tension -=tentemp;
-          test->forces += tentemp;
-          test->bonds++;
-          pm->bonds++;
-        }
+        Vector3D dist = close[hbond]->position - pm->position;
+        float distf = dist.norm2();
+        dist.normalize();
+        tension += wp->ks * mass * mass * TARGET_MIN * dist / distf;
+        //close[hbond]->forces -= tentemp;
         //cout << distf;
       }
 
@@ -206,6 +202,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
     PointMass &p = iter[0];
     p.position += p.velocity * delta_t + 0.5 * p.forces / mass * delta_t * delta_t;
+    //p.velocity *= 1 - wp->damping;
     p.velocity += p.forces / mass * delta_t;
     for (CollisionObject *co : *collision_objects) {
       co->collide(p);

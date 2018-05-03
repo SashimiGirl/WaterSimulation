@@ -16,9 +16,18 @@ void Sphere::collide(PointMass &pm) {
     pm.position = pm.last_position + (1 - friction) * (correction);
     Vector3D normalc = tangent - position;
     normalc.normalize();
-    normalc = (1 + this->elasticity)* normalc * dot(pm.velocity, normalc);
-    this->velocity += normalc * pm.mass / mass;
-    pm.velocity += normalc;
+    double summting = 1.0 / (mass + pm.mass);
+    double vp = dot(normalc, pm.velocity);
+    double vs = dot(normalc, this->velocity);
+    double vfatboi = (pm.mass * vp + mass * vs) *summting;
+    double vpboi = (pm.mass - mass) * summting * vp + 2 * mass * summting * vs;
+    double vsboi = 2 * pm.mass * summting * vp + (mass - pm.mass) * summting * vs;
+
+    //normalc = * normalc * dot(mass * this->velocity + pm.mass * pm.velocity, normalc);
+    Vector3D bigboi = this->velocity - vs*normalc;
+    Vector3D lilbit = pm.velocity - vp*normalc;
+    this->velocity = bigboi + (this->elasticity * (vsboi-vfatboi) + vfatboi) * normalc;
+    pm.velocity = lilbit + (this->elasticity * (vpboi-vfatboi) + vfatboi) * normalc;
   }
   //cout << this->velocity <<"\n";
 }
