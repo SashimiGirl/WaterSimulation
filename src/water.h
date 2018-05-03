@@ -48,7 +48,7 @@ struct Water {
   float SPkernel(Vector3D in, float var, float scalar);
   float Pkernel(Vector3D in, float var, float scalar, float scalar2);
   Vector3D dSPkernel(Vector3D in, float var, float scalar);
-  float pointDensity(pointMass &p);
+  float pointDensity(PointMass &p);
   Vector3D deltaP(PointMass& p);
   void self_collide(PointMass &pm, vector<PointMass *> &candidates);
   void hash_collide(uint64_t hash, vector<PointMass *> &candidates);
@@ -62,7 +62,6 @@ struct Water {
   // Cloth components
   vector<PointMass> point_masses;
   unordered_map<int, float> lambdas;
-  unordered_map<int, float> pressures;
   ClothMesh *surfaceMesh;
 
   // Spatial hashing
