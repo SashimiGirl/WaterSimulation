@@ -6,21 +6,24 @@ SolidSphere::SolidSphere (float radius)
   this->r = radius;
   glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-
+	
 	for (int i = 0; i <= SPHERE_NUM_LAT; i++) {
     for (int j = 0; j <= SPHERE_NUM_LON; j++) {
       double lat = ((double)i) / SPHERE_NUM_LAT;
       double lon = ((double)j) / SPHERE_NUM_LON;
-      GLfloat *vptr = &Vertices[3 * SINDEX(i, j)];
-      GLfloat *nptr = &Normals[3 * SINDEX(i, j)];
+      double *vptr = &Vertices[VERTEX_SIZE * SINDEX(i, j)];
+
+      vptr[TCOORD_OFFSET + 0] = lon;
+      vptr[TCOORD_OFFSET + 1] = 1 - lat;
 
       lat *= M_PI;
       lon *= 2 * M_PI;
       double sinlat = sin(lat);
 
-      nptr[0] = vptr[0] = sinlat * sin(lon);
-      nptr[1] = vptr[1] = cos(lat);
-      nptr[2] = vptr[2] = sinlat * cos(lon);
+      vptr[NORMAL_OFFSET + 0] = vptr[VERTEX_OFFSET + 0] = sinlat * sin(lon);
+      vptr[NORMAL_OFFSET + 1] = vptr[VERTEX_OFFSET + 1] = cos(lat),
+                           vptr[NORMAL_OFFSET + 2] = vptr[VERTEX_OFFSET + 2] =
+                               sinlat * cos(lon);
     }
   }
 
@@ -41,14 +44,45 @@ SolidSphere::SolidSphere (float radius)
       iptr[5] = i00;
     }
   }
+  GLfloat vertices[3 * SPHERE_NUM_INDICES];
+  GLfloat normals[3 * SPHERE_NUM_INDICES];
+  GLfloat* v = vertices;
+  GLfloat* n = normals;
+  for (int i = 0; i < SPHERE_NUM_INDICES; i += 3) {
+    double *vPtr1 = &Vertices[VERTEX_SIZE * Indices[i]];
+    double *vPtr2 = &Vertices[VERTEX_SIZE * Indices[i + 1]];
+    double *vPtr3 = &Vertices[VERTEX_SIZE * Indices[i + 2]];
 
+    glm::dvec3 p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1],
+                vPtr1[VERTEX_OFFSET + 2]);
+    glm::dvec3 p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1],
+                vPtr2[VERTEX_OFFSET + 2]);
+    glm::dvec3 p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1],
+                vPtr3[VERTEX_OFFSET + 2]);
+
+    glm::dvec3 n1(vPtr1[NORMAL_OFFSET], vPtr1[NORMAL_OFFSET + 1],
+                vPtr1[NORMAL_OFFSET + 2]);
+    glm::dvec3 n2(vPtr2[NORMAL_OFFSET], vPtr2[NORMAL_OFFSET + 1],
+                vPtr2[NORMAL_OFFSET + 2]);
+    glm::dvec3 n3(vPtr3[NORMAL_OFFSET], vPtr3[NORMAL_OFFSET + 1],
+                vPtr3[NORMAL_OFFSET + 2]);
+
+    *v++ = p1.x; *v++ = p1.y; *v++ = p1.z;
+    *v++ = p2.x; *v++ = p2.y; *v++ = p2.z;
+    *v++ = p3.x; *v++ = p3.y; *v++ = p3.z;
+
+    *n++ = n1.x; *n++ = n1.y; *n++ = n1.z;
+    *n++ = n2.x; *n++ = n2.y; *n++ = n2.z;
+    *n++ = n3.x; *n++ = n3.y; *n++ = n3.z;
+  }
+  
 	glGenBuffers(1, &vbo[VERTEX_BUFFER]);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 3 * SPHERE_NUM_INDICES * sizeof(GLfloat), Vertices, GL_STATIC_DRAW);
-
+	glBufferData(GL_ARRAY_BUFFER, 3 * SPHERE_NUM_INDICES * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	
 	glGenBuffers(1, &vbo[NORMAL_BUFFER]);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[NORMAL_BUFFER]);
-	glBufferData(GL_ARRAY_BUFFER, 3 * SPHERE_NUM_INDICES * sizeof(GLfloat), Normals, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 3 * SPHERE_NUM_INDICES * sizeof(GLfloat), normals, GL_STATIC_DRAW);
 
 	/**
 	glGenBuffers(1, &vbo[TEXCOORD_BUFFER]);
@@ -72,7 +106,7 @@ SolidSphere::SolidSphere (float radius)
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray (3);
 	delete[] i;
-
+	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	*/
@@ -83,27 +117,26 @@ void SolidSphere::draw (GLfloat x, GLfloat y, GLfloat z, GLuint pid)
     glBindVertexArray(vao);
     GLuint loc = glGetUniformLocation(pid, "modelMatrix");
     glm::mat4 model_matrix(r, 0, 0, 0, 0, r, 0, 0, 0, 0, r, 0, x, y, z, 1);
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(model_matrix));
-
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(model_matrix)); 
+    
     glEnableVertexAttribArray (0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_BUFFER]);
 	  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
+	  
 	  glBindBuffer(GL_ARRAY_BUFFER, vbo[NORMAL_BUFFER]);
 	  glEnableVertexAttribArray (2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-    //glDrawArrays(GL_TRIANGLES, 0, 3 * SPHERE_NUM_INDICES);
-    glDrawElements(GL_TRIANGLES, SPHERE_NUM_INDICES, GL_UNSIGNED_INT, this->Indices);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 3 * SPHERE_NUM_INDICES);
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(2);
-
+    
     /*
     glBindVertexArray(vao);
     GLuint loc = glGetUniformLocation(pid, "modelMatrix");
     glm::mat4 model_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(model_matrix));
-
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(model_matrix)); 
+    
 	  glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, NULL);
 	  glBindVertexArray(0);
     **/

@@ -43,7 +43,7 @@ endif(WIN32)
 # Source files
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(SOURCES 
+set(SOURCES
 
 ${SRC_DIR}/main.cpp
 ${SRC_DIR}/Simulator.cpp
@@ -56,9 +56,15 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE "${SRC_DIR}")
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
 
-add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory 
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
       ${SRC_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
 
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 # GLFW
 #find_package(glfw3 REQUIRED)
@@ -92,7 +98,3 @@ set(ASSIMP_DIR "${LIB_DIR}/assimp")
 add_subdirectory("${ASSIMP_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${ASSIMP_DIR}/include")
 target_link_libraries(${PROJECT_NAME} "assimp")
-
-
-
-

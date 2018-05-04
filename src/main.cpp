@@ -40,6 +40,7 @@ GLuint pid;
 glm::mat4 world_view_matrix = glm::mat4(1.0f);
 glm::mat4 projection_matrix = glm::mat4(1.0f);
 glm::dvec3 w = glm::dvec3(0, 0, -1);
+Simulator* simulator;
 /*
 void display(void);
 
@@ -92,9 +93,8 @@ void glLookAt(glm::vec3 pos, glm::vec3 dir, float d) // look at x,y,z along vect
 
 void glFrustum(float fov, float near, float far) {
     projection_matrix = glm::frustum(-fov, fov, -fov, fov, 0.01f, 10.0f);
-    //transform here
     GLuint loc = glGetUniformLocation(pid, "projectionMatrix");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(projection_matrix)); 
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(projection_matrix));
 }
 
 void keyboardFunc(GLFWwindow* win, int key, int scancode, int action, int mods) {
@@ -112,6 +112,10 @@ void keyboardFunc(GLFWwindow* win, int key, int scancode, int action, int mods) 
             case GLFW_KEY_RIGHT:
                 rotationY -= 0.08f;
                 break;
+            case GLFW_KEY_R:
+                simulator->reset();
+            case GLFW_KEY_P:
+                simulator->pause();
             default:
                 break;
         }
@@ -149,31 +153,33 @@ int main(int argc, char** argv)
     /* Loop until the user closes the window */
     pid = LoadShaders(vertex_file_path, fragment_file_path);
     glUseProgram(pid);
-    
+
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
     glFrustum(0.01, 0.01, 10);
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
    // glLookAt(glm::dvec3(0.0, 0.0, 0.0), glm::dvec3(0.0, 0.0, -1.0), 1.0);
     glm::vec3 orig(0.0, 0.0, 0.0);
-    Simulator* simulator = new Simulator(pid);
-    
+    Simulator::WaterParameters *wp = new Simulator::WaterParameters(1.0, 10, 40, 10);
+    simulator = new Simulator(pid, glm::vec3(0.0, -9.81, 0.0), wp, 30, 30);
+
     for (int i = 1; i > argc; i += 1) {
       std::string path = argv[i];
       simulator->load(path);
     }
-    
+
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
-
-        glm::vec3 view = glm::rotate(rotationY, glm::vec3(0.0, 1.0, 0.0)) * 
-                          glm::rotate(rotationX, glm::vec3(1.0, 0.0, 0.0)) * 
+        glm::vec3 view = glm::rotate(rotationY, glm::vec3(0.0, 1.0, 0.0)) *
+                          glm::rotate(rotationX, glm::vec3(1.0, 0.0, 0.0)) *
                           glm::vec4(0.0, 0.0, -1.0, 0.0);
         glLookAt(orig, view, zoom);
-
-        simulator->step();
+        for (int i = 0; i < simulator->steps; i++) {
+          simulator->step();
+        }
 
         simulator->render();
 
@@ -182,7 +188,7 @@ int main(int argc, char** argv)
 
         /* Poll for and process events */
         glfwPollEvents();
-        
+
     }
     glfwDestroyWindow(window);
     glfwTerminate();
