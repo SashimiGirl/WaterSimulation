@@ -8,12 +8,13 @@
 
 #define PARTICLE_RADIUS 0.01
 #define TARGET_MIN 2 * PARTICLE_RADIUS
-#define TARGET_MAX 4 * PARTICLE_RADIUS
-#define TARGET_REST 2 * PARTICLE_RADIUS
-#define BIGCHIC 0.5
-#define BIGCHIC2 10.5
+#define TARGET_MAX 3 * PARTICLE_RADIUS
+#define NEIGHBOR_RADIUS 5 * PARTICLE_RADIUS
+#define TARGET_REST 1 * PARTICLE_RADIUS
+#define BIGCHIC 15
+#define BIGCHIC2 315
 #define BIGCHIC3 64
-#define EPSILON 0.1
+#define EPSILON 10
 using namespace std;
 
 Water::Water(int num_length_points, int num_width_points, int num_height_points) {
@@ -35,12 +36,16 @@ Water::~Water() {
 
 void Water::buildVolume() {
   // TODO (Part 1.1): Build a grid of masses.
+  int hash = 0;
   for (int k = 0; k < num_length_points; k++) {
     for (int i = 0; i < num_height_points; i++) {
       for (int j = 0; j < num_width_points; j++) {
         point_masses.emplace_back(
-            Vector3D(TARGET_MIN * j, TARGET_MIN * i + 1.0, TARGET_MIN * k),
-            PARTICLE_RADIUS, k * num_width_points * num_height_points + i * num_width_points + j);
+            Vector3D(TARGET_MIN * j + (double)rand() / RAND_MAX * TARGET_MIN * 0.2,
+                     TARGET_MIN * i + 1.0 + (double)rand() / RAND_MAX * TARGET_MIN * 0.2,
+                     TARGET_MIN * k)+ (double)rand() / RAND_MAX * TARGET_MIN * 0.2,
+            PARTICLE_RADIUS, hash);
+        hash += 1;
       }
     }
   }
@@ -84,15 +89,14 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       co->collide(p);
     }
     container->collide(p);
+    p.tmp_position = p.position;
   }
-
   //Building spatial map for efficiency.
   build_spatial_map();
   vector<vector<PointMass*> *> bs;
   for (auto &bucket : map) {
     bs.push_back(bucket.second);
   }
-
   //Assigning neighbors to each point mass for easy access and efficiency.
   //Stores it in neighbors vector in each particle.
   #pragma omp parallel for
@@ -102,50 +106,62 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     self_collide((*bmasses[0]), candidates);
 
     for (PointMass* pm : bmasses) {
-
+      pm->neighbors.clear();
       vector<PointMass*> close;
       for (PointMass* c : candidates) {
         Vector3D dist = pm->position - c->position;
         float distf = dist.norm();
-        if (pm != c && distf < TARGET_MAX) {
+        if (pm != c && distf < NEIGHBOR_RADIUS) {
           close.push_back(c);
         }
       }
-      pm->neighbors.clear();
       //delete &pm->neighbors;
       pm->neighbors = close;
 
     }
   }
 
-  //Calculated the lambda at every point mass. Stores it in lambdas vector.
-  for (PointMass &pboi : point_masses) {
-    float rh = mass * pointDensity(pboi);
-    float C_i = rh/this->density - 1;
-    float denom = 0; // The denominator of the lambda
-    for (PointMass* i : pboi.neighbors) {// Case 1 k=j.
-      denom += gradC(i, &pboi).norm2();
+  //THE WOWOOWOWOWOWOOWOWOWOOWOWOWOWOW
+  //THE WOWOOWOWOWOWOOWOWOWOOWOWOWOWOW
+  //THE WOWOOWOWOWOWOOWOWOWOOWOWOWOWOW
+  for (int wow = 0; wow < 1; wow ++) {
+    //Calculated the lambda at every point mass. Stores it in lambdas vector.
+    for (PointMass &pboi : point_masses) {
+      float rh = mass * pointDensity(pboi);
+      float C_i = rh/TARGET_REST - 1;
+      float denom = 0; // The denominator of the lambda
+      for (PointMass* i : pboi.neighbors) {// Case 1 k=j.
+        denom += gradC(i, &pboi).norm2();
+      }
+      denom += gradC(&pboi, &pboi).norm2();//case 2 k=i
+      //cout << denom << "\n";
+      this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
     }
-    denom += gradC(&pboi, &pboi).norm2();//case 2 k=i
-    //cout << denom << "\n";
-    this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
+
+    //Find delta p for every point and update the predicted positions.
+    //Update the velocities. Notice that force is never used except for external forces.
+
+    for (PointMass& p : point_masses) {
+      Vector3D dp = deltaP(p);
+      p.position = p.tmp_position + dp;
+      for (CollisionObject* co : *collision_objects) {
+        co->collide(p);
+      }
+      container->collide(p);
+      p.velocity = (p.position - p.last_position) / delta_t;
+    }
+    for (PointMass& p : point_masses) {
+      p.tmp_position = p.position;
+    }
   }
 
-  //Find delta p for every point and update the predicted positions.
-  //Update the velocities. Notice that force is never used except for external forces.
 
-  for (PointMass& p : point_masses) {
-    Vector3D dp = deltaP(p);
-    p.tmp_position = p.position + dp;
-    p.velocity = (p.tmp_position - p.last_position) / delta_t;
-    for (CollisionObject* co : *collision_objects) {
-      co->collide(p);
-    }
-    container->collide(p);
-  }
-  for (PointMass& p : point_masses) {
-    p.position = p.tmp_position;
-  }
+  // for (PointMass& p : point_masses) {
+  //   for (CollisionObject* co : *collision_objects) {
+  //     co->collide(p);
+  //   }
+  //   container->collide(p);
+  // }
 
 
 
@@ -216,18 +232,29 @@ void Water::hash_collide(uint64_t hash, vector<PointMass *> &candidates) {
 }
 //Spikey kernel
 float Water::SPkernel(Vector3D in, float var, float scalar) {
-  float tmp = var - in.norm();
+  float tmp = in.norm();
+  if (tmp > var) {
+    return 0;
+  }
+  tmp = var - in.norm();
   return scalar / (M_PI * pow(var, 6)) * tmp * tmp * tmp;
 }
 //Poly kernel
 float Water::Pkernel(Vector3D in, float var, float scalar, float scalar2) {
   float n = in.norm();
+  if (n > var) {
+    return 0;
+  }
   float tmp = var*var - n*n;
   return scalar / (scalar2 * M_PI * pow(var, 9)) * tmp * tmp * tmp;
 }
 // derivative of spikey (gradient)
 Vector3D Water::dSPkernel(Vector3D in, float var, float scalar) {
-  float tmp = var - in.norm();
+  float tmp = in.norm();
+  if (tmp > var) {
+    return 0;
+  }
+  tmp = var - in.norm();
   in.normalize();
   return 3 * scalar / (M_PI * pow(var, 6)) * tmp * tmp * in;
 }
@@ -246,8 +273,11 @@ Vector3D Water::deltaP(PointMass& p) {
   for (PointMass* it : p.neighbors) {
     result += (lamp + this->lambdas[it->hash]) * dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
   }
-  result *= 1.0 / this->density;
-  //cout << result << "\n";
+  result *= 1.0 / TARGET_REST;
+  if (result.norm2() > 0.000001) {
+    result.normalize();
+    result *= 0.001;
+  }
   return result;
 }
 //Find the gradient Ck
@@ -257,16 +287,16 @@ Vector3D Water::gradC(PointMass* pk, PointMass* pi) {
     for (PointMass* p : pk->neighbors) {
       gradient += dSPkernel(pi->position - p->position, TARGET_MAX, BIGCHIC);
     }
-    return gradient / this->density;
+    return gradient / TARGET_REST;
   }
   else {
-    return -dSPkernel(pi->position - pk->position, TARGET_MAX, BIGCHIC) / this->density;
+    return -dSPkernel(pi->position - pk->position, TARGET_MAX, BIGCHIC) / TARGET_REST;
   }
 }
 
 
 uint64_t Water::hash_position(Vector3D pos) {
-  float t = TARGET_MAX;
+  float t = NEIGHBOR_RADIUS;
   uint64_t result = (uint16_t) (floor(pos.x/t) + 32768);
   result = (result << 16) | (uint16_t) (floor(pos.x/t) + 32768);
   result = (result << 16) | (uint16_t) (floor(pos.x/t) + 32768);
