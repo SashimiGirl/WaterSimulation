@@ -6,7 +6,7 @@
 #include "water.h"
 #include "collision/sphere.h"
 
-#define PARTICLE_RADIUS 0.01
+#define PARTICLE_RADIUS 0.02
 #define TARGET_MAX 3 * PARTICLE_RADIUS
 #define NEIGHBOR_RADIUS 4 * PARTICLE_RADIUS
 #define TARGET_REST 2 * PARTICLE_RADIUS

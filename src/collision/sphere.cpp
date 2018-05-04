@@ -39,5 +39,5 @@ void Sphere::render(GLShader &shader) {
   // and intersect with the sphere when rendered
   //printf("Postion: (%f, %f, %f)\n", position.x, position.y, position.z);
   //Misc::draw_sphere(shader, position, radius);
-  Misc::draw_sphere(shader, position, radius, velocity);
+  Misc::draw_sphere(shader, position, radius);
 }
