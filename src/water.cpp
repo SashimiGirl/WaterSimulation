@@ -11,7 +11,7 @@
 #define NEIGHBOR_RADIUS 4 * PARTICLE_RADIUS
 #define TARGET_REST 2 * PARTICLE_RADIUS
 #define BIGCHIC 15
-#define BIGCHIC2 315
+#define BIGCHIC2 315 / 6000
 #define BIGCHIC3 64
 #define EPSILON 10
 using namespace std;
@@ -66,7 +66,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   }
   Vector3D waterf = mass * ef;
   for (PointMass &p : point_masses) {
-    p.forces += waterf;
+    p.forces = waterf;
     p.mass = mass;
     p.last_position = p.position;
     p.last_velocity = p.velocity;
@@ -81,10 +81,10 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   #pragma omp parallel for
   for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
     PointMass &p = iter[0];
-    p.velocity += p.forces / mass * delta_t;
     p.position += p.velocity * delta_t + 0.5 * p.forces / mass * delta_t * delta_t;
+    p.velocity += p.forces / mass * delta_t;
     //p.velocity *= 1 - wp->damping;
-    p.forces = 0;
+    //p.forces = 0;
     for (CollisionObject *co : *collision_objects) {
       co->collide(p, true);
     }
@@ -126,7 +126,9 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   //THE WOWOOWOWOWOWOOWOWOWOOWOWOWOWOW
   for (int wow = 0; wow < 10; wow ++) {
     //Calculated the lambda at every point mass. Stores it in lambdas vector.
-    for (PointMass &pboi : point_masses) {
+    //#pragma omp parallel for
+    for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
+      PointMass &pboi = iter[0];
       float rh = mass * pointDensity(pboi);
       float C_i = rh/TARGET_REST - 1;
       float denom = 0; // The denominator of the lambda
@@ -143,20 +145,56 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
     //Find delta p for every point and update the predicted positions.
     //Update the velocities. Notice that force is never used except for external forces.
 
-    for (PointMass& p : point_masses) {
-      Vector3D dp = deltaP(p, wp);
+    #pragma omp parallel for
+    for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
+      PointMass &p = iter[0];
+      Vector3D dp = deltaP(p);
       p.position = p.tmp_position + dp / simulation_steps;
       for (CollisionObject* co : *collision_objects) {
-        co->collide(p, false || wow == 9);
+        co->collide(p, wow == 9);
       }
       container->collide(p, true);
       // adds change in velocity because it is set in deltaP
-      p.velocity += (p.position - p.last_position) / delta_t;
+      p.velocity = (p.position - p.last_position) / delta_t;
     }
     for (PointMass& p : point_masses) {
       p.tmp_position = p.position;
     }
   }
+  // sum for vorticity
+  Vector3D wi;
+  // sum for viscosity (wi)
+  Vector3D sum;
+  #pragma omp parallel for
+  for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
+    PointMass &p = iter[0];
+    for (PointMass* it : p.neighbors) {
+      Vector3D helper = it->velocity - p.velocity;
+      Vector3D temp = dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
+      sum += helper * Pkernel(p.position - it->position, TARGET_MAX, BIGCHIC2, BIGCHIC3);
+      wi += cross(helper, temp);
+    }
+    // if (wi.norm2() > 0.0001) {
+    //   wi.normalize();
+    //   wi *= 0.01;
+    // }
+
+    for (PointMass* it : p.neighbors) {
+      Vector3D thingy = (it->position - p.position) * 0.5f;
+      thingy.normalize();//CAUTITITITIION> CAN BE MANANANANNANANANNNA BENNANANA SEAL OF APPROOOOVAL
+      p.forces += EPSILON * cross(thingy, wi);
+    }
+    p.velocity = p.velocity + wp->viscosity * sum;
+  }
+
+// adjusting wi
+// if (sum.norm2() > 0.000001) {
+//   sum.normalize();
+//   sum *= 0.0001;
+// }
+
+// adding XSPH viscosity
+
 
 
   // for (PointMass& p : point_masses) {
@@ -176,7 +214,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
         + 0.5 * co->forces / co->mass * delta_t * delta_t;
       co->last_position = old;
     // Check if object hit the box
-      
+
       //cout << co->position << "\n";
       container->collide(*co);
   }
@@ -271,46 +309,21 @@ float Water::pointDensity(PointMass &pm) {
   return rho_i;
 }
 // Find the delta p correction for zero pressure change.
-Vector3D Water::deltaP(PointMass& p, WaterParameters *wp) {
+Vector3D Water::deltaP(PointMass& p) {
   float lamp = this->lambdas[p.hash];
   Vector3D result;
-  // sum for viscosity (wi)
-  Vector3D sum;
-  // summ of mass * position for viscosity 
-  Vector3D mp = p.mass * p.position;
-  // summ of mass for viscosity 
-  double m = p.mass;
-    
   for (PointMass* it : p.neighbors) {
-    Vector3D temp = dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
-    result += (lamp + this->lambdas[it->hash]) * temp;
-    // to calculate wi
-    Vector3D helper = (it->velocity - p.velocity);
-    sum += cross(helper, temp);
-    mp += it->mass * it->position;
-    m += it->mass;
+    result += (lamp + this->lambdas[it->hash]) * dSPkernel(p.position-it->position, TARGET_MAX, BIGCHIC);
   }
-  
-  // adjusting wi
-  if (sum.norm2() > 0.000001) {
-    sum.normalize();
-    sum *= 0.0001;
-  }
-
-  // adding XSPH viscosity
-  p.velocity = wp->viscosity * sum;
-  Vector3D p_target = mp / m;
-  Vector3D N = (p_target - p.position);
+  //Vector3D p_target = mp / m;
+  //Vector3D N = (p_target - p.position);
+  //sum = cross(N, sum);
   // Normalize N, but gotta check for zero vector
-  if (N.norm2() > 0.000001) {
-     N.normalize();
-  }
-  
+  // if (N.norm2() > 0.000001) {
+  //    N.normalize();
+  // }
   // Vorticity N x wi
-  sum = cross(N, sum);
-  p.forces = 1.0 / EPSILON * sum;
-  
-
+  //p.forces = 1.0 / EPSILON * sum;
   result *= 1.0 / TARGET_REST;
   if (result.norm2() > 0.0001) {
     result.normalize();
