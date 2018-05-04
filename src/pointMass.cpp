@@ -19,5 +19,6 @@ void PointMass::collide(PointMass &pm) {
 void PointMass::render(GLShader &shader) {
   // We decrease the radius here so flat triangles don't behave strangely
   // and intersect with the sphere when rendered
-  Misc::draw_sphere(shader, position, radius);
+  //Misc::draw_sphere(shader, position, radius);
+  Misc::draw_sphere(shader, position, radius, velocity);
 }

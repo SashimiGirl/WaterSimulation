@@ -135,18 +135,19 @@ void WaterSimulator::drawContents() {
 
   shader.setUniform("model", model);
   shader.setUniform("viewProjection", viewProjection);
-/*
+
   switch (activeShader) {
   case WIREFRAME:
     drawWireframe(shader);
     break;
   case NORMALS:
     drawNormals(shader);
+    //printf("normals drawn...\n");
     break;
   case PHONG:
     drawPhong(shader);
     break;
-  }*/
+  }
 
   // Render the box
   container->render(shader);

@@ -307,10 +307,10 @@ int main(int argc, char **argv) {
   // So no forces are applied to the box
   double p_friction = 0.1;
   double elasticity = 0.5;
-  double size = 1.5;
-  double xshift = -0.5;
+  double size = 1.0;
+  double xshift = -0.25;
   double yshift = 0;
-  double zshift = -0.5;
+  double zshift = -0.25;
   Box *container = new Box(p_friction, elasticity, xshift, yshift,
     zshift, size);
 

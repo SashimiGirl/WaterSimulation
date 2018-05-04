@@ -9,9 +9,9 @@
     "damping": 0.2,
     "density": 1.0,
     "ks": 6000.0,
-    "viscosity" : 0.1,
-    "num_length_points": 30,
-    "num_width_points": 30,
-    "num_height_points": 5
+    "viscosity" : 0.01,
+    "num_length_points": 10,
+    "num_width_points": 10,
+    "num_height_points": 20
   }
 }

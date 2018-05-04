@@ -15,6 +15,7 @@ namespace Misc {
  * current modelview/projection matrices and color/material settings.
  */
 void draw_sphere(GLShader &shader, const Vector3D &p, double r);
+void draw_sphere(GLShader &shader, const Vector3D &p, double r, const Vector3D &n);
 
 } // namespace Misc
 } // namespace CGL

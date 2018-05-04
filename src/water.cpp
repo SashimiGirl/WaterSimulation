@@ -6,7 +6,7 @@
 #include "water.h"
 #include "collision/sphere.h"
 
-#define PARTICLE_RADIUS 0.01
+#define PARTICLE_RADIUS 0.02
 #define TARGET_MIN 2 * PARTICLE_RADIUS
 #define TARGET_MAX 3 * PARTICLE_RADIUS
 #define NEIGHBOR_RADIUS 5 * PARTICLE_RADIUS
@@ -67,7 +67,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   }
   Vector3D waterf = mass * ef;
   for (PointMass &p : point_masses) {
-    p.forces = waterf;
+    p.forces += waterf;
     p.mass = mass;
     p.last_position = p.position;
     p.last_velocity = p.velocity;
@@ -82,9 +82,10 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   #pragma omp parallel for
   for (auto iter = point_masses.begin(); iter < point_masses.end(); iter++) {
     PointMass &p = iter[0];
+    p.velocity += p.forces / mass * delta_t;
     p.position += p.velocity * delta_t + 0.5 * p.forces / mass * delta_t * delta_t;
     //p.velocity *= 1 - wp->damping;
-    p.velocity += p.forces / mass * delta_t;
+    p.forces = 0;
     for (CollisionObject *co : *collision_objects) {
       co->collide(p);
     }
@@ -138,17 +139,19 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
     }
 
+    // Vorticity Confinement and Viscoity
+
     //Find delta p for every point and update the predicted positions.
     //Update the velocities. Notice that force is never used except for external forces.
 
     for (PointMass& p : point_masses) {
-      Vector3D dp = deltaP(p);
+      Vector3D dp = deltaP(p, wp);
       p.position = p.tmp_position + dp;
       for (CollisionObject* co : *collision_objects) {
         co->collide(p);
       }
       container->collide(p);
-      p.velocity = (p.position - p.last_position) / delta_t;
+      p.velocity += (p.position - p.last_position) / delta_t;
     }
     for (PointMass& p : point_masses) {
       p.tmp_position = p.position;
@@ -168,11 +171,12 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   // Verlet integration to compute new object positions
   for (CollisionObject* co : *collision_objects) {
       Vector3D old = co->position;
+      co->velocity += co->forces / co->mass * delta_t;
       co->position += (co->velocity) * delta_t
         + 0.5 * co->forces / co->mass * delta_t * delta_t;
       co->last_position = old;
     // Check if object hit the box
-      co->velocity += co->forces / co->mass * delta_t;
+      
       //cout << co->position << "\n";
       container->collide(*co);
   }
@@ -267,12 +271,59 @@ float Water::pointDensity(PointMass &pm) {
   return rho_i;
 }
 // Find the delta p correction for zero pressure change.
-Vector3D Water::deltaP(PointMass& p) {
+Vector3D Water::deltaP(PointMass& p, WaterParameters *wp) {
   float lamp = this->lambdas[p.hash];
   Vector3D result;
+  // sum for viscosity
+  Vector3D sum;
+  Vector3D mp = p.mass * p.position;
+  double m = p.mass;
+    //Vector3D wi = sum(velocities) X dSPkernel()
+    // p_target = 
+    // 
+    // f = e * (N x wi)
   for (PointMass* it : p.neighbors) {
-    result += (lamp + this->lambdas[it->hash]) * dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
+    Vector3D temp = dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
+    result += (lamp + this->lambdas[it->hash]) * temp;
+    // to calculate viscosity 
+    //if (temp.x > 0 && temp.y > 0 && temp.z > 0)
+      //printf("temp vorticity: %f, %f, %f\n", temp.x, temp.y, temp.z);
+    Vector3D helper = (it->velocity - p.velocity);
+    sum += cross(helper, temp);
+      /*
+      printf("temp: %f, %f, %f\n", temp.x, temp.y, temp.z);
+      printf("helper: %f, %f, %f\n", helper.x, helper.y, helper.z);
+      Vector3D datCross = cross(helper, temp);
+      printf("Crossing: %f, %f, %f\n", datCross.x, datCross.y, datCross.z);*/
+    mp += it->mass * it->position;
+    m += it->mass;
   }
+  // adding XSPH viscosity
+  if (sum.norm2() > 0.000001) {
+    sum.normalize();
+    sum *= 0.0001;
+  }
+
+  p.velocity = wp->viscosity * sum;
+  Vector3D p_target = mp / m;
+  Vector3D N = (p_target - p.position);
+  if (N.x > 0 || N.y > 0 || N.z > 0
+    || N.x < 0 || N.y < 0 || N.z < 0) {
+     N.normalize();
+  }
+
+  //printf("N vorticity: %f, %f, %f\n", N.x, N.y, N.z);
+  //printf("before vorticity: %f, %f, %f\n", p.forces.x, p.forces.y, p.forces.z);
+  sum = cross(N, sum);
+  p.forces = 1.0 / EPSILON * sum;
+  /*
+  if (p.forces.x > 0 || p.forces.y > 0 || p.forces.z > 0)
+     printf("force positive: %f, %f, %f\n", p.forces.x, p.forces.y, p.forces.z);
+  if (p.forces.x < 0 || p.forces.y < 0 || p.forces.z < 0)
+     printf("force negative: %f, %f, %f\n", p.forces.x, p.forces.y, p.forces.z);
+     */
+  //printf("after vorticity: %f, %f, %f\n", p.forces.x, p.forces.y, p.forces.z);
+
   result *= 1.0 / TARGET_REST;
   if (result.norm2() > 0.000001) {
     result.normalize();

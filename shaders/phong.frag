@@ -13,7 +13,8 @@ out vec4 out_color;
 vec4 shadePhong() {
   float p = 8.0;
 
-  vec4 color = in_color * 0.35;
+  //vec4 color = in_color * 0.35;
+  vec4 color = vec4(0, 0, 1, 0) * 0.35;
 
   vec3 lightVec = light - vertex.xyz;
   vec3 lightDir = normalize(lightVec);

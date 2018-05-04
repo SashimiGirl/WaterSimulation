@@ -49,7 +49,7 @@ struct Water {
   float Pkernel(Vector3D in, float var, float scalar, float scalar2);
   Vector3D dSPkernel(Vector3D in, float var, float scalar);
   float pointDensity(PointMass &p);
-  Vector3D deltaP(PointMass& p);
+  Vector3D deltaP(PointMass& p, WaterParameters *wp);
   Vector3D gradC(PointMass* pk, PointMass* pi);
   void self_collide(PointMass &pm, vector<PointMass *> &candidates);
   void hash_collide(uint64_t hash, vector<PointMass *> &candidates);

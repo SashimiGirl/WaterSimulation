@@ -41,6 +41,6 @@ public:
   ~ClothMesh() {}
 
   vector<Triangle *> triangles;
-}; // struct ClothMesh
+}; // struct WaterMesh
 
-#endif // CLOTH_MESH_H
+#endif // WATER_MESH_H

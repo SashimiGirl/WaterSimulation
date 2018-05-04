@@ -142,5 +142,76 @@ void draw_sphere(GLShader &shader, const Vector3D &p, double r) {
   */
 }
 
+void draw_sphere(GLShader &shader, const Vector3D &p, double r, const Vector3D &n) {
+  if (!initialized) {
+    init_mesh();
+    initialized = true;
+  }
+
+  Matrix4f model;
+  model << r, 0, 0, p.x, 0, r, 0, p.y, 0, 0, r, p.z, 0, 0, 0, 1;
+
+  shader.setUniform("model", model);
+
+  MatrixXf positions(3, SPHERE_NUM_INDICES * 3);
+  MatrixXf normals(3, SPHERE_NUM_INDICES * 3);
+
+  for (int i = 0; i < SPHERE_NUM_INDICES; i += 3) {
+    double *vPtr1 = &Vertices[VERTEX_SIZE * Indices[i]];
+    double *vPtr2 = &Vertices[VERTEX_SIZE * Indices[i + 1]];
+    double *vPtr3 = &Vertices[VERTEX_SIZE * Indices[i + 2]];
+
+    Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1],
+                vPtr1[VERTEX_OFFSET + 2]);
+    Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1],
+                vPtr2[VERTEX_OFFSET + 2]);
+    Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1],
+                vPtr3[VERTEX_OFFSET + 2]);
+
+    Vector3D n1(vPtr1[NORMAL_OFFSET], vPtr1[NORMAL_OFFSET + 1],
+                vPtr1[NORMAL_OFFSET + 2]);
+    Vector3D n2(vPtr2[NORMAL_OFFSET], vPtr2[NORMAL_OFFSET + 1],
+                vPtr2[NORMAL_OFFSET + 2]);
+    Vector3D n3(vPtr3[NORMAL_OFFSET], vPtr3[NORMAL_OFFSET + 1],
+                vPtr3[NORMAL_OFFSET + 2]);
+
+    positions.col(i) << p1.x, p1.y, p1.z;
+    positions.col(i + 1) << p2.x, p2.y, p2.z;
+    positions.col(i + 2) << p3.x, p3.y, p3.z;
+
+    normals.col(i) << n.x, n.y, n.z;
+    normals.col(i + 1) << n.x, n.y, n.z;
+    normals.col(i + 2) << n.x, n.y, n.z;
+  }
+
+  shader.uploadAttrib("in_position", positions);
+  shader.uploadAttrib("in_normal", normals);
+
+  shader.drawArray(GL_TRIANGLES, 0, SPHERE_NUM_INDICES);
+
+  /*
+  TODO: when I use this scratch code to render the mesh using the more efficient
+        glDrawElements, it works for a single frame and then fails on all
+        successive frames. Any opengl experts care to figure out why?
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnable(GL_NORMALIZE);
+  for (int i = 0; i < SPHERE_NUM_VERTICES; i++) {
+    normals[3 * i] = Vertices[8 * i + 2];
+    normals[3 * i + 1] = Vertices[8 * i + 3];
+    normals[3 * i + 2] = Vertices[8 * i + 4];
+    vertices[3 * i] = Vertices[8 * i + 5];
+    vertices[3 * i + 1] = Vertices[8 * i + 6];
+    vertices[3 * i + 2] = Vertices[8 * i + 7];
+  }
+
+  glVertexAttribPointer(3, GL_DOUBLE, 0, vertices);
+  glNormalPointer(GL_DOUBLE, 0, normals);
+  glDrawElements(GL_TRIANGLES, SPHERE_NUM_INDICES, GL_UNSIGNED_INT, Indices);
+  */
+}
+
 } // namespace Misc
+
+
 } // namespace CGL
