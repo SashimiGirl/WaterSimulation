@@ -305,9 +305,9 @@ int main(int argc, char **argv) {
 
   // Creates object for the surrounding box
   // So no forces are applied to the box
-  double p_friction = 0.1;
-  double elasticity = 0.5;
-  double size = 1.0;
+  double p_friction = 0.2;
+  double elasticity = 0.2;
+  double size = 0.5;
   double xshift = -0.25;
   double yshift = 0;
   double zshift = -0.25;

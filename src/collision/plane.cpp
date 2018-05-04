@@ -23,7 +23,7 @@ void Plane::collide(PointMass &pm) {
 
 }*/
 
-void Plane::collide(PointMass &pm) {
+void Plane::collide(PointMass &pm, bool flag) {
   // TODO (Part 3.2): Handle collisions with planes.
   double t = dot((point - pm.last_position), normal) / dot((pm.position - pm.last_position).unit(), normal);
   if (t <= 0) {
@@ -36,6 +36,7 @@ void Plane::collide(PointMass &pm) {
     }
   }
 }
+
 
 void Plane::render(GLShader &shader) {
   nanogui::Color color(0.7f, 0.7f, 0.7f, 1.0f);

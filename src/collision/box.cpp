@@ -10,7 +10,7 @@ using namespace CGL;
 
 #define SURFACE_OFFSET 0.0001
 
-void Box::collide(PointMass &pm) {
+void Box::collide(PointMass &pm, bool flag) {
   // Handle collisions with box like sphere objects
   for (int i = 0; i < 5; i++) {
     double t = dot((pm.position - point[i]), normal[i]);
@@ -60,11 +60,15 @@ void Box::collide(CollisionObject &s) {
   for (int i = 0; i < 5; i++) {
     double t = dot((s.position - point[i]), normal[i]);
     if (t <= s.radius) {
-      t = dot((point[i] - s.position), normal[i]);
-      Vector3D tangent = s.position + t * normal[i];
+      /*Vector3D tangent = s.position + t * normal[i];
       // Little bounce?
       s.last_position = s.position;
-      s.position = tangent + normal[i] * s.radius;
+      s.position = tangent + normal[i] * s.radius;*/
+      s.position += (1.0 + elasticity) * (dot(point[i] - s.position, normal[i]) +  s.radius + SURFACE_OFFSET) * normal[i];
+      s.position = (1 - friction) * (s.position - s.last_position) + s.last_position;
+      if (dot((s.last_position - point[i]), normal[i]) >= 0) {
+        s.velocity = s.velocity - (1.0 + elasticity) *(normal[i] * dot(s.velocity, normal[i]));
+      }
     }
   }
 }
