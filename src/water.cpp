@@ -7,10 +7,9 @@
 #include "collision/sphere.h"
 
 #define PARTICLE_RADIUS 0.01
-#define TARGET_MIN 2 * PARTICLE_RADIUS
 #define TARGET_MAX 3 * PARTICLE_RADIUS
-#define NEIGHBOR_RADIUS 5 * PARTICLE_RADIUS
-#define TARGET_REST 1 * PARTICLE_RADIUS
+#define NEIGHBOR_RADIUS 4 * PARTICLE_RADIUS
+#define TARGET_REST 2 * PARTICLE_RADIUS
 #define BIGCHIC 15
 #define BIGCHIC2 315
 #define BIGCHIC3 64
@@ -41,9 +40,9 @@ void Water::buildVolume() {
     for (int i = 0; i < num_height_points; i++) {
       for (int j = 0; j < num_width_points; j++) {
         point_masses.emplace_back(
-            Vector3D(TARGET_MIN * j + (double)rand() / RAND_MAX * TARGET_MIN * 0.2,
-                     TARGET_MIN * i + 1.0 + (double)rand() / RAND_MAX * TARGET_MIN * 0.2,
-                     TARGET_MIN * k)+ (double)rand() / RAND_MAX * TARGET_MIN * 0.2,
+            Vector3D(TARGET_REST * j + (double)rand() / RAND_MAX * TARGET_REST * 0.2,
+                     TARGET_REST * i + 1.0 + (double)rand() / RAND_MAX * TARGET_REST * 0.2,
+                     TARGET_REST * k + (double)rand() / RAND_MAX * TARGET_REST * 0.2),
             PARTICLE_RADIUS, hash);
         hash += 1;
       }
@@ -124,7 +123,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
   //THE WOWOOWOWOWOWOOWOWOWOOWOWOWOWOW
   //THE WOWOOWOWOWOWOOWOWOWOOWOWOWOWOW
   //THE WOWOOWOWOWOWOOWOWOWOOWOWOWOWOW
-  for (int wow = 0; wow < 1; wow ++) {
+  for (int wow = 0; wow < 10; wow ++) {
     //Calculated the lambda at every point mass. Stores it in lambdas vector.
     for (PointMass &pboi : point_masses) {
       float rh = mass * pointDensity(pboi);
@@ -143,7 +142,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
 
     for (PointMass& p : point_masses) {
       Vector3D dp = deltaP(p);
-      p.position = p.tmp_position + dp;
+      p.position = p.tmp_position + dp / simulation_steps;
       for (CollisionObject* co : *collision_objects) {
         co->collide(p);
       }
@@ -260,7 +259,7 @@ Vector3D Water::dSPkernel(Vector3D in, float var, float scalar) {
 }
 //Find the density at ever point. This is the C() function.
 float Water::pointDensity(PointMass &pm) {
-  float rho_i = 0;
+  float rho_i = Pkernel(Vector3D(), TARGET_MAX, BIGCHIC2, BIGCHIC3);
   for (PointMass* boi: pm.neighbors) {
     rho_i += Pkernel(pm.position - boi->position, TARGET_MAX, BIGCHIC2, BIGCHIC3);
   }
@@ -274,9 +273,9 @@ Vector3D Water::deltaP(PointMass& p) {
     result += (lamp + this->lambdas[it->hash]) * dSPkernel(p.position - it->position, TARGET_MAX, BIGCHIC);
   }
   result *= 1.0 / TARGET_REST;
-  if (result.norm2() > 0.000001) {
+  if (result.norm2() > 0.0001) {
     result.normalize();
-    result *= 0.001;
+    result *= 0.01;
   }
   return result;
 }
