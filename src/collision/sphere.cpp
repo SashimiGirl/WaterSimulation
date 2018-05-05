@@ -27,10 +27,18 @@ void Sphere::collide(PointMass &pm, bool flag) {
     Vector3D bigboi = this->velocity - vs*normalc;
     Vector3D lilbit = pm.velocity - vp*normalc;
     if (flag) {
-      this->velocity =  (bigboi + (this->elasticity * (vsboi-vfatboi) + vfatboi) * normalc);
+      this->velocity = 
+      (bigboi + (this->elasticity * (vsboi-vfatboi) 
+        + vfatboi) * normalc);    
     }
-    pm.velocity = lilbit + (this->elasticity * (vpboi-vfatboi) + vfatboi) * normalc;
-
+    // Applying pressure in the opposite direction of the norm (towards the sphere))
+    Vector3D press = -(pm.pressure.norm()) * normalc;
+    // Scaling the force by the ratio of the masses
+    forces += press * pm.mass / mass;
+    
+    pm.velocity = lilbit + 
+    (this->elasticity * (vpboi-vfatboi) + vfatboi) 
+    * normalc;
   }
 }
 

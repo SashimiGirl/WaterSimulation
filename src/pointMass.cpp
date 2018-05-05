@@ -20,5 +20,15 @@ void PointMass::render(GLShader &shader) {
   // We decrease the radius here so flat triangles don't behave strangely
   // and intersect with the sphere when rendered
   //Misc::draw_sphere(shader, position, radius);
+
+  /* Setting blue color
+  MatrixXf positions(3, 1);
+  MatrixXf normals(3, 1);
+  positions.col(0) << position.x, position.y, position.z;
+  normals.col(0) << velocity.x, velocity.y, velocity.z;
+
+  shader.uploadAttrib("in_position", positions);
+  shader.uploadAttrib("in_normal", normals);
+  */
   Misc::draw_sphere(shader, position, radius);
 }

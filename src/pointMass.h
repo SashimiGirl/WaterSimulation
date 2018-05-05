@@ -40,6 +40,7 @@ struct PointMass {
   Vector3D forces;
   Vector3D velocity;
   Vector3D last_velocity;
+  Vector3D pressure;
   //for sph
   vector<PointMass*> neighbors;
   // mesh reference

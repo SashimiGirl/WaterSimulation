@@ -308,9 +308,9 @@ int main(int argc, char **argv) {
   double p_friction = 0.2;
   double elasticity = 0.2;
   double size = 0.5;
-  double xshift = -0.25;
+  double xshift = 0;
   double yshift = 0;
-  double zshift = -0.25;
+  double zshift = 0;
   Box *container = new Box(p_friction, elasticity, xshift, yshift,
     zshift, size);
 

@@ -16,7 +16,9 @@ public:
   }
   CollisionObject(Vector3D origin, double r) {
   	// Soft Rubber density: 0.11 grams/cm^3
-  	density = 0.1;
+  	// Floating density 0.41
+  	// Sinking 5.41
+  	density = 5.41;
   	mass = density * 3.14159265 * (4 / 3) * pow(r, 3);
   	start_position = origin;
   	last_position = origin;

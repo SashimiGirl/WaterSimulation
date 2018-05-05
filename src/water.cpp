@@ -107,17 +107,23 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
 
     for (PointMass* pm : bmasses) {
       pm->neighbors.clear();
+      Vector3D pressure = 0;
+
       vector<PointMass*> close;
       for (PointMass* c : candidates) {
-        Vector3D dist = pm->position - c->position;
-        float distf = dist.norm();
-        if (pm != c && distf < NEIGHBOR_RADIUS) {
+        Vector3D dis = pm->position - c->position;
+        float dist = dis.norm();
+        
+        if (pm != c && dist < NEIGHBOR_RADIUS) {
           close.push_back(c);
+          // creating pressure based on surround particles 
+          pressure += c->mass * 9.81;
         }
       }
+      // Adding pressure based on surrounding particles
+      pm->pressure = pressure;
       //delete &pm->neighbors;
       pm->neighbors = close;
-
     }
   }
 
@@ -132,9 +138,21 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
       float rh = mass * pointDensity(pboi);
       float C_i = rh/TARGET_REST - 1;
       float denom = 0; // The denominator of the lambda
+      Vector3D temp_press = 0;
+      int count = 0;
       for (PointMass* i : pboi.neighbors) {// Case 1 k=j.
+        // Summing up the pressures above this point
+        if (pboi.position.y <= i->position.y) {
+          temp_press += i->pressure;
+          count ++;
+        }
         denom += gradC(i, &pboi).norm2();
       }
+      // Adding the average of the pressures above
+      if (count > 0) {
+        pboi.pressure += temp_press / (double) count;
+      }
+
       denom += gradC(&pboi, &pboi).norm2();//case 2 k=i
       //cout << denom << "\n";
       this->lambdas[pboi.hash] = -C_i/(denom+EPSILON);
@@ -194,6 +212,7 @@ void Water::simulate(double frames_per_sec, double simulation_steps, WaterParame
 // }
 
 // adding XSPH viscosity
+
 
 
 

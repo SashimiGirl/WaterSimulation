@@ -142,7 +142,6 @@ void WaterSimulator::drawContents() {
     break;
   case NORMALS:
     drawNormals(shader);
-    //printf("normals drawn...\n");
     break;
   case PHONG:
     drawPhong(shader);
@@ -152,12 +151,14 @@ void WaterSimulator::drawContents() {
   // Render the box
   container->render(shader);
 
-  for (CollisionObject *co : *collision_objects) {
-    co->render(shader);
-  }
   for (PointMass pm : this->water->point_masses) {
     pm.render(shader);
   }
+
+  for (CollisionObject *co : *collision_objects) {
+    co->render(shader);
+  }
+
 }
 
 void WaterSimulator::drawWireframe(GLShader &shader) {//draw wireframe on surface?
@@ -242,9 +243,9 @@ void WaterSimulator::drawPhong(GLShader &shader) {
 
   Vector3D cp = camera.position();
 
-  shader.setUniform("in_color", color);
+  shader.setUniform("in_color", nanogui::Color(0.49f, 0.81f, 0.94f, 1.0f));
   shader.setUniform("eye", Vector3f(cp.x, cp.y, cp.z));
-  shader.setUniform("light", Vector3f(0.5, 2, 2));
+  shader.setUniform("light", Vector3f(0.5, 1, 1));
 
   shader.uploadAttrib("in_position", positions);
   shader.uploadAttrib("in_normal", normals);
