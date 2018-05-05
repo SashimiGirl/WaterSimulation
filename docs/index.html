@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+      body {
+        padding: 100px;
+        width: 1000px;
+        margin: auto;
+        text-align: left;
+        font-weight: 300;
+        font-family: 'Open Sans', sans-serif;
+        color: #121212;
+      }
+      h1, h2, h3, h4 {
+        font-family: 'Source Sans Pro', sans-serif;
+      }
+    pre {
+        padding: 10px;
+        margin: 0;
+        background: rgb(20, 23, 27);
+        color: white;
+        line-height: 1.3em;
+    }
+    codef1 {
+        color: rgb(253, 148, 8);
+    }
+
+    codef2 {
+        color: lightblue;
+    }
+
+    codef3 {
+        color: green;
+    }
+</style>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<title>CS 184 Final Project: Concept Water Simulation</title>
+</head>
+<body>
+
+<h1 align="middle">Final Project Writeup</h1>
+<h2 align="middle">3D Fluidy Fun with Non-static Rubber Ducky Sphere</h2>
+<h2 align="middle">https://github.com/bradleyq/FluidyFun.git</h2>
+<h3 align="middle">Bradley Qu (3031852786), CS184-afx</h3>
+<h3 align="middle">Sara Maemoto (3032330692), CS184-afb</h3>
+<h3 align="middle">Benjamin Wu (3031881074), CS184-agg</h3>
+
+    <br/>
+<div>
+
+<h2>Abstract</h2>
+    <p>We built a 3D position based water simulation. Our simulation incorporated incompressibility, instability corrections, vorticity, viscosity, buoyancy, and parallelism (not sure about this word). Using project 4 as a base for our code, we changed the cloth simulator to create our water simulator. We used pointmasses as our water molecules, collision spheres as our non static objects, and we created a bounding box using collision planes. We utilized parallelism to update positions, find closest molecules, calculate buoyancy, vorticity and viscosity.</p>
+
+<h2>Technical Approach and Implementation</h2>
+    <p>We tested out the given Particle class and engine, but had some trouble transitioning it out of GLUT, which is deprecated. Eventually, we tested
+    out both our own engine and with CS184 Project 4: Clothsim engine, which we eventually kept to. However, we expanded our knowledge of the OpenGL pipeline and GLFW Camera and Control Manipulation in doing so.
+    We chose the following class structure to closely resemble the physics between water, represented in point masses, our static surfaces, such as the enclosing box, and our non-static sphere.</p>
+
+    <div style='columns: 2'>
+        <pre>
+        <codef1>struct</codef1> PointMass {
+            <codef2>Vector3D</codef2> position;
+            <codef2>Vector3D</codef2> last_position;
+            <codef2>Vector3D</codef2> forces;
+            <codef2>Vector3D</codef2> pressure;
+
+            <codef2>Vector3D</codef2> velocity;
+            <codef2>Vector3D</codef2> last_velocity;
+
+            <codef2>vector&lt;PointMass *&gt;</codef2> neighbors;
+            <codef2>void <codef3>collide</codef3>(PointMass &pm)</codef2>;
+        }
+        </pre>
+        <p> Each of these is a water particle, keeping track of a past and present velocity and position as well as forces and a pressure term to allow for SPH (Smoothed Particle Hydrodynamics) incompressibility. We also created a spatial map to
+          find neighbors of water particles efficiently by the hashing method presented in Project 4, which is also necessary to calculate a local density to find SPH incompressibility. We have a collide method between all water particles
+          to see if they are close enough to interact and if so, how to transfer physical features between them.<p>
+        <br/>
+    </div>
+
+    <div style='columns: 2'>
+        <pre>
+        <codef1>struct</codef1> Sphere : CollisionObject {
+            <codef2>double</codef2> density;
+            <codef2>double</codef2> radius;
+            <codef2>double</codef2> elasticity;
+
+            <codef2>Vector3D</codef2> position;
+            <codef2>Vector3D</codef2> last_position;
+            <codef2>Vector3D</codef2> velocity;
+            <codef2>Vector3D</codef2> forces;
+
+            <codef2>void <codef3>collide</codef3>(PointMass &pm)</codef2>;
+        }
+        </pre>
+        <p>For brevity, the less interesting static CollisionObjects, such as the enclosing box, are omitted. Adding in the interactions with this sphere
+          is much of what we did uniquely to other purely water simulations and is the focus of this project. We decided to create a superclass
+          of all non-water-particle meshes in CollisionObject, each with a separate collide function. For sphere, since it is non-static, we must give it physical
+          features to allow for its movement and interaction with water particles. We have a density to decide whether it floats or sinks, a radius for how much volume
+          it takes up around its position (from both prior we can calculate mass and, therefore, its momentum) and an elasticity for its collisions.<p>
+        <br/>
+    </div>
+
+    <p>We simulated our system in realistic physics by updating with the following step algorithm in pseudocode:</p>
+
+    <pre>
+        <codef1>for</codef1> all water particles:
+            <codef2>replace</codef2> last position/velocity to current position/velocity
+            <codef2>accumulate</codef2> forces from external accelerations (gravity)
+            <codef2>update</codef2> current velocity based on accumulated forces and apply forces to collision objects
+            <codef2>calculate</codef2> the particle's position in time step by Verlet integration
+        <codef1>build</codef1> our spatial map of water particles
+        <codef1>for</codef1> all water particles:
+            <codef2>find</codef2> all neighboring particles within a given radius and update pressure based on number of neighbors
+        <codef1>iterate</codef1> set number of steps for precision:
+            <codef1>for</codef1> all water particles:
+                <codef2>calculate</codef2> incompressibility for SPH
+                <codef2>consider</codef2> new water particle positions and check for collisions with sphere
+        <codef1>for</codef1> all water particles:
+            <codef2>update</codef2> velocity based on current and last position
+            <codef2>apply</codef2> vorticity and viscosity
+            <codef2>update</codef2> physical parameters for vorticity and viscosity
+        <codef1>for<codef1> all collision objects:
+            <codef2>update</codef2> position and velocity by Verlet Integration and check and perform collisions
+    </pre>
+
+    <p>We first update the last position in order to be free to modify our current position. We use explicit Euler after getting external forces to find our first update to velocity and position by Verlet. We then find and assign neighbors with our spatial map by dividing 3D space into blocks with unique hashes and a maximum neighbor distance, with the hash shown in the block below. We then iterate through our SPH updates to address incompressibility, calculating a position change to reflect this for each particle based on its neighboring density. We do this by the equations shown below, in which we use two kernels, one for point density calculations and another for gradients. This is to ensure SPH incompressibility. Afterwards, we complete our updates with vorticity (inclination of liquids to rotate) and viscosity (resistance to flow), as shown also in equations further below.
+    </p>
+    <pre>
+    <codef2>uint64_t</codef2> Water::hash_position(Vector3D pos) {
+        <codef2>float</codef2> t = NEIGHBOR_RADIUS;
+        <codef2>uint64_t</codef2> result = (uint16_t)(<codef2>floor</codef2>(pos.x/t)+32768);
+        result = (result << 16) | (uint16_t)(<codef2>floor</codef2>(pos.x/t)+32768);
+        result = (result << 16) | (uint16_t)(<codef2>floor</codef2>(pos.x/t)+32768);
+        <codef1>return</codef1> result;
+    }</pre>
+
+<h4>Steps in SPH</h4>
+    <p> For each of the following steps, we present the equation and the results of it.</p>
+    <p align="middle">\(C_{i}(\textbf{p}_{1}, ...,\textbf{p}_{n}) = \frac{\rho_{i}}{\rho_{0}} - 1\)<p>
+
+    <p>For a determined \(\rho_0\) rest density, and point densities as found in the next equation, we may determine a density constraint. </p>
+
+    <p align='middle'>\(\rho_{i} = \sum_j m_j W_(\textbf{p}_i - \textbf{p}_j, h)\)</p>
+
+    <p>This allows us to calculate a point density for each water particle</p>
+
+    <p align="middle">\(\lambda_{i} = -\frac{C_{i}(\textbf{p}_{1}, ...,\textbf{p}_{n})}{\Sigma_{k}\lvert\nabla_{\textbf{p}_{k}}C_{i}\rvert^2 + \epsilon}\)</p>
+
+    <p>This scales the constraint and accounts for neighbors' point densities and prepares us to find our positional change in the next equation.
+    <p align='middle'>\(\nabla_{\textbf{p}_k}C_i = \frac{1}{\rho_0}\sum_j\nabla_{\textbf{p}_k}W(\textbf{p}_i-\textbf{p}_j, h)\)</p>
+
+    <p align="middle"> \(\Delta \textbf{p}_{i} = \frac{1}{\rho_{0}} \sum_j(\lambda_{i} + \lambda_{j})\nabla W(\textbf{p}_{i} - \textbf{p}_{j}, h)\)</p>
+
+    <p align="middle">\(s_{corr} = -k (\frac{W(\textbf{p}_{i} - \textbf{p}_{j}, h)}{W(\Delta\textbf{q}, h)})^2\)</p>
+    <p> We use this to correct for particles with few neighbors and hence are affected less than expected. This also gives an illusion of surface tension. </p>
+
+    <p align="middle">\(\omega_{i} = \nabla \times \textbf{v} = \sum_{j}\textbf{v}_{ij} \times \nabla_{\textbf{p}_{j}}W(\textbf{p}_{i} - \textbf{p}_{j}, h)\)</p>
+
+    <p align="middle">\(\textbf{f}_{i}^{vorticity} = \epsilon (\textbf{N} \times \omega_{i})\)</p>
+    <p> These equations give the vorticity as shown in Bubbles Alive, listed in our resources.</p>
+    <p align="middle">\(\textbf{p}_{\oplus} = \frac{m_{i}\textbf{p}_{i} + m_{j}\textbf{p}_{j}}{m_{i} + m_{j}}\)</p>
+    <p align="middle">\(\eta = \textbf{p}_{\oplus} - \textbf{p}_{i}\)</p>
+    <p align="middle">\(\textbf{N} = \frac{\eta}{|\eta|}\)</p>
+
+    <p> Finally, we add in viscosity. </p>
+
+    <p align="middle">\(\textbf{v}_{i}^{new} = \textbf{v}_{i} + c\Sigma_{j}\textbf{v}_{ij}\cdot W(\textbf{p}_{i} - \textbf{p}_{j}, h)\)</p>
+
+    <p>Many parameters had to be determined by tracing dependencies and what could closely follow a true physics simulation and thus posed a challenge to determine.
+      However, by doing this, we could see the true results of changing any parameter and thus help us develop intuition in what certain parameters mean physically. </p>
+
+<h4>Collisions</h4>
+  <p> We implemented both basic collisions with particles and the enclosing box, SPH incompressibility with particle to particle, and a similar collision from particle to Sphere </p>
+  <p> The most problematic was from particles to the sphere, in which the buoyancy and positional updates were very problematic to change. For sphere buoyancy, we updated this based on Archimedes' Principle
+    with the local density of particles around us. For the sphere's positional updates, we had to be very careful that we did not update too often with the sphere collide method and this took a long time to find
+    a balance of when to update and the constants that would allow the sphere to float when expected and sink otherwise. </p>
+
+<h3>OpenMP Parallelization</h3>
+  <p> One of our biggest challenges was scaling the number the particles without scaling the overall time necessary and reducing the framerate.
+  We decided on OpenMP parallelization for all of our loops (notice the obnoxious number of iterating through all particles) and much of it was readily parallelizable and thus proved
+  to be a substantial rate of improvement, especially in finding neighbors with the spatial map, which initially was taking 90% of the total resources. However, there were dependencies that
+  could not be parallelized and thus we hope we can improve this in the future with both more optimal code and use of NVIDIA's GPU optimization in CUDA. </p>
+
+<h2>Lesson Learned</h2>
+    <h3>Milestone</h3>
+    <p>At our milestone, we had our basic data structure and little particle interaction in a 2D environment. Safe to say, even though we have many ideas as to how we could improve this in the future, that we have come a long way.</p>
+    <p>Here is our simulation from our milestone:</p>
+    <div align='middle'>
+        <img src='images/Bubble.gif' width=400>
+    </div>
+    <p>Through this process, we have gained insight into the OpenGL pipeline and how to manipulate a GLFW camera, even though these changes did not find its way into our final product. We learned how to trace dependencies efficiently and how to gain intuition
+      as to what was going wrong when debugging based on the physics shown in the render. We saw the great distinction between SPH water and our first simulations of particles with little interaction and of course, we have learned to both consider and be able to scale
+      our simulation in the future to a greater number of particles.</p>
+
+
+<h2>Gallery of Fluidy Results</h2>
+    <div align='middle'>
+      <figure>
+        <img src='images/No_vortic.gif' width=400>
+        <figcaption>No vorticity</figcaption>
+      </figure>
+      <figure>
+        <img src='images/Rise.gif' width=400>
+        <figcaption>Buoyancy with low density sphere</figcaption>
+      </figure>
+      <figure>
+        <img src='images/Wavy.gif' width=400>
+        <figcaption>Viscosity emphasized</figcaption>
+      </figure>
+      <figure>
+        <img src='images/wasser1.gif' width=400>
+      </figure>
+      <figure>
+        <img src='images/wasser3.gif' width=400>
+      </figure>
+      <figure>
+        <img src='images/wasser4.gif' width=400>
+      </figure>
+    </div>
+
+<h2>Final Presentation Video</h2>
+    <div align='middle'>
+      <video width="320" height="240" controls>
+        <source src="images/video.mp4" type="video/mp4">
+      </video>
+    </div>
+
+<h2>Kernels used</h2>
+    <p> For density calculations: </p>
+    <p align='middle'>\(W_{poly6}(\textbf{r}, h) = \frac{315}{64\pi h^9}(h^2 - |\textbf{r}|^2)^3\)</p>
+
+    <p>For all gradient kernels</p>
+
+    <p align='middle'>\(W_{spiky}(\textbf{r}, h) = \frac{15}{\pi h^6}(h - |\textbf{r}|)^3\)</p>
+    <p align='middle'>\(\nabla_{\textbf{p}}W_{spiky}(\textbf{r}, h) = \frac{45}{\pi h^6}(h-|\textbf{r}|)^2\hat{r}\)</p>
+
+<h2>Resources and References</h2>
+    <div style='padding-left: 30px'>
+        <h3>References</h3>
+        <li><a href="http://mmacklin.com/pbf_sig_preprint.pdf">Position Based Fluids [Macklin, Muller]</a></li>
+        <li><a href="http://simulation.dongguk.edu/jeongmo/sphbubbles/sphbubbles.pdf">Bubbles Alive [Hong et al.]</a></li>
+        <li><a href="http://dillonyao.tk/flooid/">SP17 Fluid Simulation Project [Yao, Situ]</a></li>
+
+        <h3>Resources</h3>
+        <div style='padding-left: 30px;'>
+            <h4 style='margin: 0.5em 0;'>Graphics Libraries</h4>
+                <li>OpenGL</li>
+                <li><a href='http://www.glfw.org/'>GLFW3</a></li>
+            <h4 stype='margin: 0.5em 0;'>Architecture</h4>
+                <li>CS184 Projects for CMAKE and rendering engine</li>
+        </div>
+    </div>
+
+<h2>Contributions</h2>
+    <h4>Bradley Qu</h4>
+    <ul>
+        <li>Implemented Fluid Simulation Algorithm</li>
+        <li>Upgraded from GLUT</li>
+        <li>Included CMake Support</li>
+        <li>Added in viscosity and vorticity</li>
+    </ul>
+    <h4>Sara Maemoto</h4>
+    <ul>
+        <li>Created class for collision objects</li>
+        <li>Ported code to Project 4 from our base</li>
+        <li>Inserted true buoyancy calculations</li>
+    </ul>
+    <h4>Benjamin Wu</h4>
+    <ul>
+        <li>Implemented Fluid Simulation Algorithm</li>
+        <li>Created camera manipulation in original GLFW</li>
+        <li>Investigated instability solutions and created correction vector</li>
+    </ul>
+
+</div>
+</body>
+</html>
