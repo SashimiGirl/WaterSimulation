@@ -70,7 +70,7 @@
             <codef2>Vector3D</codef2> last_velocity;
 
             <codef2>vector&lt;PointMass *&gt;</codef2> neighbors;
-            <codef2>void <codef3>collide</codef3>(PointMass &pm)</codef2>;
+            <codef2>void <codef3>collide</codef3>(PointMass pm)</codef2>;
         }
         </pre>
         <p> Each of these is a water particle, keeping track of a past and present velocity and position as well as forces and a pressure term to allow for SPH (Smoothed Particle Hydrodynamics) incompressibility. We also created a spatial map to
